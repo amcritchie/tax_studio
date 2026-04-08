@@ -1,0 +1,71 @@
+<%# Exclude/Include modal — rendered once per page, self-contained Alpine component %>
+<div x-data="{
+       open: false, loading: false, errorMsg: '', reason: '',
+       slug: '', vendor: '', excluded: false,
+       get csrfToken() { return document.querySelector('meta[name=&quot;csrf-token&quot;]')?.content },
+       openModal(detail) {
+         this.slug = detail.slug; this.vendor = detail.vendor || '';
+         this.excluded = detail.excluded; this.reason = ''; this.errorMsg = '';
+         this.loading = false; this.open = true;
+         this.$nextTick(() => this.$refs.reasonInput?.focus());
+       },
+       close() { this.open = false },
+       async submit() {
+         if (!this.reason.trim()) return;
+         this.loading = true; this.errorMsg = '';
+         try {
+           const res = await fetch('/transactions/' + this.slug + '/toggle_exclude.json', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken },
+             body: JSON.stringify({ exclude_reason: this.reason.trim() })
+           });
+           if (!res.ok) throw new Error((await res.json()).error || 'Toggle failed');
+           const data = await res.json();
+           window.dispatchEvent(new CustomEvent('exclude-toggled', { detail: data }));
+           this.close();
+         } catch (e) { this.errorMsg = e.message; }
+         finally { this.loading = false; }
+       }
+     }"
+     x-show="open" x-cloak
+     @open-exclude-modal.window="openModal($event.detail)"
+     @keydown.escape.window="if (open) close()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+  <%# Backdrop %>
+  <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+       class="absolute inset-0 bg-black/60" @click="close()"></div>
+
+  <%# Modal %>
+  <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+       class="relative bg-surface border border-subtle rounded-xl shadow-2xl w-full max-w-md p-6">
+
+    <h3 class="text-lg font-bold text-heading mb-1" x-text="excluded ? 'Include Transaction' : 'Exclude Transaction'"></h3>
+    <p class="text-secondary text-sm mb-4" x-text="vendor"></p>
+
+    <%# Error %>
+    <template x-if="errorMsg">
+      <div class="mb-3 p-2 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs" x-text="errorMsg"></div>
+    </template>
+
+    <div class="mb-4">
+      <label class="label-upper mb-1 block" x-text="excluded ? 'Why include this?' : 'Why exclude this?'"></label>
+      <textarea x-model="reason" x-ref="reasonInput" rows="3" class="input-field text-sm w-full"
+                :placeholder="excluded ? 'e.g. This is actually a business expense for...' : 'e.g. This is a personal purchase...'"
+                @keydown.meta.enter="submit()" @keydown.ctrl.enter="submit()"></textarea>
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+      <button @click="close()" class="btn btn-outline btn-sm" :disabled="loading">Cancel</button>
+      <button @click="submit()" :disabled="loading || !reason.trim()" class="btn btn-sm" :class="excluded ? 'btn-primary' : 'btn-danger'">
+        <span x-show="!loading" x-text="excluded ? 'Include' : 'Exclude'"></span>
+        <span x-show="loading" class="flex items-center gap-1">
+          <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          Saving
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

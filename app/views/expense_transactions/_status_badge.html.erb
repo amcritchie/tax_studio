@@ -1,0 +1,16 @@
+<% if txn.excluded %>
+  <%= render "components/badge", text: "Excluded", scheme: "gray" %>
+<% else %>
+  <% case txn.status %>
+  <% when "unreviewed" %>
+    <%= render "components/badge", text: "Unreviewed", scheme: "warning" %>
+  <% when "classified" %>
+    <% if txn.business_expense? %>
+      <%= render "components/badge", text: "Business", scheme: "emerald" %>
+    <% else %>
+      <%= render "components/badge", text: "Personal", scheme: "gray" %>
+    <% end %>
+  <% when "needs_review" %>
+    <%= render "components/badge", text: "Needs Review", scheme: "orange" %>
+  <% end %>
+<% end %>

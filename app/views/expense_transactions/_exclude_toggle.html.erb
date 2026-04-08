@@ -1,0 +1,13 @@
+<%# Radio-style Include/Exclude toggle — expects Alpine `excluded` in scope and txn local %>
+<div class="flex items-center gap-0.5 text-xs">
+  <button @click="if (excluded) $dispatch('open-exclude-modal', { slug: '<%= txn.slug %>', vendor: '<%= j(txn.vendor || truncate(txn.raw_description, length: 50)) %>', excluded: true })"
+          class="px-2 py-0.5 rounded-l-md border transition cursor-pointer"
+          :class="excluded ? 'bg-surface-alt border-subtle text-muted hover:text-heading' : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'">
+    Include
+  </button>
+  <button @click="if (!excluded) $dispatch('open-exclude-modal', { slug: '<%= txn.slug %>', vendor: '<%= j(txn.vendor || truncate(txn.raw_description, length: 50)) %>', excluded: false })"
+          class="px-2 py-0.5 rounded-r-md border transition cursor-pointer"
+          :class="excluded ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'bg-surface-alt border-subtle text-muted hover:text-heading'">
+    Exclude
+  </button>
+</div>

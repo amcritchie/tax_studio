@@ -1,0 +1,55 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold text-heading">Payment Methods</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to "Uploads", expense_uploads_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "New Payment Method", new_payment_method_path, class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<% if @payment_methods.any? %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @payment_methods.each do |pm| %>
+      <%
+        if pm.color.present? && pm.color_secondary.present?
+          card_style = "border-color: #{pm.color}80; background: linear-gradient(135deg, #{pm.color}50 0%, #{pm.color_secondary}40 50%, transparent 90%)"
+        elsif pm.color.present?
+          card_style = "border-color: #{pm.color}80; background: linear-gradient(135deg, #{pm.color}50 0%, #{pm.color}25 50%, transparent 90%)"
+        end
+      %>
+      <%= link_to edit_payment_method_path(pm.slug), class: "card-hover p-5 block", style: card_style do %>
+        <div class="flex items-center gap-3 mb-3">
+          <% if pm.logo.present? %>
+            <div class="w-10 h-10 flex items-center justify-center">
+              <img src="<%= pm.logo %>" alt="<%= pm.name %>" class="w-full h-full object-contain">
+            </div>
+          <% else %>
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style="background-color: <%= pm.color || 'var(--color-cta)' %>">
+              <%= pm.name[0..1].upcase %>
+            </div>
+          <% end %>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-heading text-sm truncate"><%= pm.name %></h3>
+            <% if pm.last_four.present? %>
+              <p class="text-muted text-xs">••••<%= pm.last_four %></p>
+            <% end %>
+          </div>
+          <% if pm.active? %>
+            <span class="badge bg-emerald-500/10 text-emerald-500 border-emerald-500/30">Active</span>
+          <% else %>
+            <span class="badge bg-yellow-500/10 text-yellow-500 border-yellow-500/30">Inactive</span>
+          <% end %>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs text-muted">
+          <div class="w-4 h-4 rounded-full border border-subtle" style="background-color: <%= pm.color %>"></div>
+          <span>Position: <%= pm.position %></span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty-state">
+    <p class="text-secondary text-lg mb-4">No payment methods yet.</p>
+    <%= link_to "Add your first payment method", new_payment_method_path, class: "btn btn-primary" %>
+  </div>
+<% end %>

@@ -1,0 +1,129 @@
+<div class="max-w-lg mx-auto">
+  <h1 class="text-2xl font-extrabold text-heading mb-6">Upload Expense File</h1>
+
+  <%= form_tag expense_uploads_path, multipart: true, class: "card p-6 space-y-5", id: "upload-form" do %>
+    <div x-data="fileDrop()">
+      <label class="label-upper mb-2 block">File (CSV or XLSX)</label>
+      <div
+        @dragover.prevent="dragging = true"
+        @dragleave.prevent="dragging = false"
+        @drop.prevent="handleDrop($event)"
+        @click="$refs.fileInput.click()"
+        class="relative border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition"
+        :class="dragging ? 'border-primary bg-primary/5' : fileName ? 'border-strong bg-surface-alt' : 'border-subtle hover:border-strong hover:bg-surface-alt'"
+      >
+        <input type="file" name="file" accept=".csv,.xlsx,.xls" x-ref="fileInput" @change="handleSelect($event)" class="hidden">
+
+        <template x-if="!fileName">
+          <div>
+            <svg class="w-8 h-8 mx-auto mb-3 text-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+            <p class="text-secondary text-sm font-medium">Drop a file here or <span class="text-primary">browse</span></p>
+            <p class="text-muted text-xs mt-1">CSV, XLSX, or XLS</p>
+          </div>
+        </template>
+
+        <template x-if="fileName">
+          <div class="flex items-center justify-center gap-3">
+            <svg style="width:24px;height:24px;min-width:24px;min-height:24px" class="text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            <div class="text-left min-w-0">
+              <p class="text-heading font-medium text-sm truncate" x-text="fileName"></p>
+              <p class="text-muted text-xs" x-text="fileSize"></p>
+            </div>
+            <button type="button" @click.stop="clear()" class="text-muted hover:text-heading transition flex-shrink-0">
+              <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div x-data="paymentMethodPicker()" class="relative">
+      <label class="label-upper mb-2 block">Payment Method (optional — auto-detected)</label>
+      <input type="hidden" name="payment_method_id" :value="selectedId">
+
+      <button type="button" @click="open = !open" class="input-field flex items-center justify-between gap-2 text-left cursor-pointer" :style="selectedColor ? 'border-color: ' + selectedColor + '80; background: linear-gradient(90deg, ' + selectedColor + '20 0%, transparent 40%)' : ''">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <template x-if="selectedLogo">
+            <img :src="selectedLogo" alt="" class="w-5 h-5 object-contain flex-shrink-0">
+          </template>
+          <template x-if="!selectedLogo && selectedColor">
+            <div class="w-5 h-5 rounded-full flex-shrink-0" :style="'background-color: ' + selectedColor"></div>
+          </template>
+          <span class="truncate" :class="selectedId ? 'text-heading font-medium' : 'text-secondary'" x-text="selectedLabel"></span>
+          <template x-if="selectedLastFour">
+            <span class="text-muted text-xs" x-text="'••••' + selectedLastFour"></span>
+          </template>
+        </div>
+        <svg class="w-4 h-4 text-muted flex-shrink-0 transition-transform" :class="open && 'rotate-180'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+      </button>
+
+      <div x-show="open" @click.outside="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="absolute z-50 mt-1 w-full bg-surface border border-subtle rounded-lg shadow-lg overflow-hidden" style="display: none;">
+        <template x-for="pm in options" :key="pm.id">
+          <button type="button" @click="select(pm)" class="w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition" :style="pm.color ? 'border-left: 3px solid ' + pm.color : 'border-left: 3px solid transparent'" :class="selectedId === pm.id ? 'bg-surface-alt' : 'hover:bg-surface-alt'">
+            <template x-if="pm.logo">
+              <img :src="pm.logo" alt="" class="w-5 h-5 object-contain flex-shrink-0">
+            </template>
+            <template x-if="!pm.logo && pm.color">
+              <div class="w-5 h-5 rounded-full flex-shrink-0" :style="'background-color: ' + pm.color"></div>
+            </template>
+            <template x-if="!pm.logo && !pm.color">
+              <div class="w-5 h-5 flex-shrink-0"></div>
+            </template>
+            <span class="text-heading text-sm font-medium flex-1" x-text="pm.label"></span>
+            <template x-if="pm.lastFour">
+              <span class="text-muted text-xs" x-text="'••••' + pm.lastFour"></span>
+            </template>
+            <template x-if="selectedId === pm.id">
+              <svg class="w-4 h-4 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+              </svg>
+            </template>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <%= submit_tag "Upload", class: "btn btn-primary" %>
+      <%= link_to "Cancel", expense_uploads_path, class: "btn btn-outline" %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+function registerPaymentMethodPicker() {
+  Alpine.data('paymentMethodPicker', () => ({
+  open: false,
+  selectedId: '',
+  selectedLabel: 'Auto-detect',
+  selectedLogo: null,
+  selectedColor: null,
+  selectedLastFour: null,
+  options: [
+    { id: '', label: 'Auto-detect', logo: null, color: null, lastFour: null },
+    <% PaymentMethod.active.ordered.each do |pm| %>
+      { id: '<%== pm.id %>', label: '<%== j pm.name %>', logo: <%== pm.logo.present? ? "'#{j pm.logo}'" : 'null' %>, color: <%== pm.color.present? ? "'#{j pm.color}'" : 'null' %>, lastFour: <%== pm.last_four.present? ? "'#{j pm.last_four}'" : 'null' %> },
+    <% end %>
+  ],
+  select(pm) {
+    this.selectedId = pm.id;
+    this.selectedLabel = pm.label;
+    this.selectedLogo = pm.logo;
+    this.selectedColor = pm.color;
+    this.selectedLastFour = pm.lastFour;
+    this.open = false;
+  }
+}));
+}
+
+if (window.Alpine) { registerPaymentMethodPicker(); }
+else { document.addEventListener('alpine:init', registerPaymentMethodPicker); }
+</script>

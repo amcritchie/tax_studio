@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Tax Studio" %></title>
+    <%= render "layouts/studio/head" %>
+  </head>
+
+  <body x-data class="bg-page text-body min-h-screen">
+    <header x-data="{ scrolled: false }" @scroll.window="scrolled = window.scrollY > 20"
+            class="sticky top-0 z-50 bg-page transition-shadow duration-300"
+            :class="scrolled && 'shadow-lg border-b border-subtle'">
+      <div class="max-w-7xl mx-auto px-4 transition-all duration-300"
+           :class="scrolled ? 'py-2' : 'py-6'">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-6">
+            <%= link_to root_path, class: "inline-flex items-center gap-3 group" do %>
+              <h1 class="font-extrabold text-heading tracking-tight transition-all duration-300"
+                  x-bind:class="scrolled ? 'text-base' : 'text-2xl'">Tax <span class="text-primary">Studio</span></h1>
+            <% end %>
+            <nav class="flex items-center gap-4">
+              <%= link_to "Uploads", expense_uploads_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
+              <%= link_to "Transactions", expense_transactions_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
+              <%= link_to "Summary", summary_expense_transactions_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
+              <%= link_to "Tax Report", tax_report_expense_transactions_path(year: 2025), class: "text-secondary hover:text-primary text-sm font-medium transition" %>
+              <%= link_to "Guide", expense_guide_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
+              <% studio_url = Rails.env.production? ? "https://app.mcritchie.studio" : "http://localhost:3000" %>
+              <%= link_to studio_url + (logged_in? ? "/sso_login" : ""), class: "inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-lg shadow-sm transition", target: "_blank" do %>
+                McRitchie Studio
+              <% end %>
+            </nav>
+          </div>
+
+          <% if logged_in? %>
+            <%= render "components/user_nav", show_logout_link: true %>
+          <% else %>
+            <div class="flex items-center gap-3">
+              <%= render "components/admin_dropdown" %>
+              <%= render "components/theme_toggle" %>
+              <%= link_to "Log in", login_path, class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </header>
+
+    <% if content_for?(:full_width) %>
+      <div class="max-w-7xl mx-auto px-4">
+        <%= render "layouts/studio/flash" %>
+      </div>
+      <%= yield %>
+    <% else %>
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <%= render "layouts/studio/flash" %>
+        <%= yield %>
+      </div>
+    <% end %>
+  </body>
+</html>

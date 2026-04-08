@@ -1,0 +1,21 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold text-heading">Expense Uploads</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to "All Transactions", expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "Summary", summary_expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "New Upload", new_expense_upload_path, class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<% if @uploads.any? %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @uploads.each do |upload| %>
+      <%= render "upload_card", upload: upload %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="empty-state">
+    <p class="text-secondary text-lg mb-4">No expense files uploaded yet.</p>
+    <%= link_to "Upload your first file", new_expense_upload_path, class: "btn btn-primary" %>
+  </div>
+<% end %>

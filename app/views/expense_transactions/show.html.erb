@@ -1,0 +1,172 @@
+<div class="max-w-3xl mx-auto" x-data="{ excluded: <%= @transaction.excluded %> }" @exclude-toggled.window="if ($event.detail.slug === '<%= @transaction.slug %>') { window.location.reload() }">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-extrabold text-heading"><%= @transaction.vendor || @transaction.raw_description %></h1>
+      <p class="text-secondary text-sm mt-1">
+        <%= @transaction.transaction_date.strftime("%B %d, %Y") %> &middot;
+        <%= @transaction.formatted_amount %> &middot;
+        <%= @transaction.payment_method&.titleize %>
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <%= render "status_badge", txn: @transaction %>
+      <%= render "exclude_toggle", txn: @transaction %>
+    </div>
+  </div>
+
+  <%# Exclude Reason Card %>
+  <% if @transaction.exclude_reason.present? %>
+    <div class="card p-5 mb-6 border-<%= @transaction.excluded ? 'red' : 'emerald' %>-500/30">
+      <h3 class="font-bold text-sm mb-2 <%= @transaction.excluded ? 'text-red-400' : 'text-emerald-400' %>">
+        <%= @transaction.excluded ? "Excluded" : "Included" %> Reason
+      </h3>
+      <p class="text-heading text-sm mb-2"><%= @transaction.exclude_reason %></p>
+      <p class="text-muted text-xs">
+        Set by <span class="text-secondary"><%= @transaction.excluded_by&.titleize || "Unknown" %></span>
+        <% if @transaction.excluded_at.present? %>
+          &middot; <%= @transaction.excluded_at.strftime("%b %d, %Y at %I:%M %p") %>
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+
+  <%# Needs Review — Answer Form %>
+  <% if @transaction.needs_review? %>
+    <div class="card p-5 mb-6 border-orange-500/30">
+      <h3 class="font-bold text-orange-400 mb-2">AI Question</h3>
+      <p class="text-heading mb-4"><%= @transaction.ai_question %></p>
+
+      <% if @transaction.user_answer.blank? %>
+        <%= form_tag answer_review_expense_transaction_path(@transaction.slug), method: :post, class: "flex gap-3" do %>
+          <%= text_field_tag :user_answer, nil, placeholder: "Your answer...", class: "input-field flex-1", required: true %>
+          <%= submit_tag "Submit & Re-classify", class: "btn btn-primary btn-sm" %>
+        <% end %>
+      <% else %>
+        <p class="text-muted text-sm">Your answer: <span class="text-heading"><%= @transaction.user_answer %></span></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Details Card %>
+  <div class="card p-5 mb-6">
+    <h3 class="label-upper mb-4">Transaction Details</h3>
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <dt class="text-muted">Raw Description</dt>
+        <dd class="text-heading mt-1"><%= @transaction.raw_description %></dd>
+      </div>
+      <div>
+        <dt class="text-muted">Vendor</dt>
+        <dd class="text-heading mt-1"><%= @transaction.vendor || "—" %></dd>
+      </div>
+      <div>
+        <dt class="text-muted">Amount</dt>
+        <dd class="text-heading mt-1 font-mono"><%= @transaction.formatted_amount %></dd>
+      </div>
+      <div>
+        <dt class="text-muted">Date</dt>
+        <dd class="text-heading mt-1"><%= @transaction.transaction_date.strftime("%B %d, %Y") %></dd>
+      </div>
+      <div>
+        <dt class="text-muted">Card</dt>
+        <dd class="text-heading mt-1"><%= @transaction.payment_method&.titleize || "—" %></dd>
+      </div>
+      <div>
+        <dt class="text-muted">Upload</dt>
+        <dd class="mt-1"><%= link_to @transaction.expense_upload.filename, expense_upload_path(@transaction.expense_upload.slug), class: "text-primary hover:underline" %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <%# Classification Card %>
+  <% if @transaction.classification.present? %>
+    <div class="card p-5 mb-6">
+      <h3 class="label-upper mb-4">AI Classification</h3>
+      <dl class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <dt class="text-muted">Classification</dt>
+          <dd class="text-heading mt-1 font-medium"><%= @transaction.classification&.titleize %></dd>
+        </div>
+        <div>
+          <dt class="text-muted">Category</dt>
+          <dd class="text-heading mt-1"><%= @transaction.category_display || "—" %></dd>
+        </div>
+        <div>
+          <dt class="text-muted">Deduction Type</dt>
+          <dd class="text-heading mt-1"><%= @transaction.deduction_type_display || "—" %></dd>
+        </div>
+        <div>
+          <dt class="text-muted">Account</dt>
+          <dd class="text-heading mt-1"><%= @transaction.account_display || "—" %></dd>
+        </div>
+        <% if @transaction.business_description.present? %>
+          <div class="col-span-2">
+            <dt class="text-muted">Business Description</dt>
+            <dd class="text-heading mt-1"><%= @transaction.business_description %></dd>
+          </div>
+        <% end %>
+        <% if @transaction.business_purpose.present? %>
+          <div class="col-span-2">
+            <dt class="text-muted">Business Purpose</dt>
+            <dd class="text-heading mt-1"><%= @transaction.business_purpose %></dd>
+          </div>
+        <% end %>
+      </dl>
+
+      <% if @transaction.manually_overridden %>
+        <p class="text-xs text-muted mt-4">Manually overridden</p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Manual Override Form %>
+  <div class="card p-5">
+    <h3 class="label-upper mb-4">Manual Override</h3>
+    <%= form_with model: @transaction, url: expense_transaction_path(@transaction.slug), method: :patch, class: "space-y-4" do |f| %>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="label-upper mb-1 block">Classification</label>
+          <%= f.select :classification,
+            [["Business Expense", "business_expense"], ["Not Business", "not_business_expense"], ["Needs Review", "needs_review"]],
+            { include_blank: "Select..." },
+            class: "input-field text-sm" %>
+        </div>
+        <div>
+          <label class="label-upper mb-1 block">Category</label>
+          <%= f.select :category,
+            ExpenseTransaction::CATEGORIES.map { |k, v| [v, k] },
+            { include_blank: "Select..." },
+            class: "input-field text-sm" %>
+        </div>
+        <div>
+          <label class="label-upper mb-1 block">Deduction Type</label>
+          <%= f.select :deduction_type,
+            ExpenseTransaction::DEDUCTION_TYPES.map { |k, v| [v, k] },
+            { include_blank: "Select..." },
+            class: "input-field text-sm" %>
+        </div>
+        <div>
+          <label class="label-upper mb-1 block">Account</label>
+          <%= f.select :account,
+            ExpenseTransaction::ACCOUNTS.map { |k, v| [v, k] },
+            { include_blank: "Select..." },
+            class: "input-field text-sm" %>
+        </div>
+        <div>
+          <label class="label-upper mb-1 block">Vendor</label>
+          <%= f.text_field :vendor, class: "input-field text-sm" %>
+        </div>
+        <div>
+          <label class="label-upper mb-1 block">Business Purpose</label>
+          <%= f.text_field :business_purpose, class: "input-field text-sm" %>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <%= f.submit "Save Override", class: "btn btn-primary btn-sm" %>
+        <%= link_to "Back", expense_transactions_path, class: "btn btn-outline btn-sm" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%= render "expense_transactions/exclude_modal" %>

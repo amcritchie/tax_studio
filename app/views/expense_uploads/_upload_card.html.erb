@@ -1,0 +1,32 @@
+<%= link_to expense_upload_path(upload.slug), class: "card-hover p-5 block" do %>
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2 min-w-0">
+      <% if upload.payment_method&.logo.present? %>
+        <img src="<%= upload.payment_method.logo %>" alt="" class="w-5 h-5 object-contain flex-shrink-0">
+      <% end %>
+      <h3 class="font-bold text-heading text-sm truncate"><%= upload.filename %></h3>
+    </div>
+    <% case upload.status %>
+    <% when "pending" %>
+      <span class="badge bg-yellow-500/10 text-yellow-500 border-yellow-500/30">Pending</span>
+    <% when "processed" %>
+      <span class="badge bg-blue-500/10 text-blue-500 border-blue-500/30">Processed</span>
+    <% when "evaluated" %>
+      <span class="badge bg-emerald-500/10 text-emerald-500 border-emerald-500/30">Evaluated</span>
+    <% end %>
+  </div>
+
+  <div class="space-y-1 text-sm">
+    <% if upload.payment_method || upload.card_type.present? %>
+      <p class="text-secondary"><%= upload.card_type_display %></p>
+    <% end %>
+    <p class="text-secondary"><span class="font-bold text-heading"><%= upload.unique_transactions %> unique</span> / <%= upload.transaction_count %> transactions</p>
+    <% if upload.duplicates_skipped > 0 %>
+      <p class="text-muted"><%= upload.duplicates_skipped %> duplicates skipped</p>
+    <% end %>
+    <% if upload.first_transaction_at && upload.last_transaction_at %>
+      <p class="text-muted"><%= upload.first_transaction_at.strftime("%b %d, %Y") %> &ndash; <%= upload.last_transaction_at.strftime("%b %d, %Y") %></p>
+    <% end %>
+    <p class="text-muted"><%= upload.created_at.strftime("%b %d, %Y %I:%M %p") %></p>
+  </div>
+<% end %>

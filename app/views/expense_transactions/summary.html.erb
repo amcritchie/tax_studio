@@ -1,0 +1,105 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold text-heading">Expense Summary</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to "Uploads", expense_uploads_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "All Transactions", expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "2025 Tax Report", tax_report_expense_transactions_path(year: 2025), class: "btn btn-outline btn-sm" %>
+    <%= link_to "Export CSV", export_expense_transactions_path, class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<%# Top Stats %>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+  <div class="card p-5">
+    <p class="label-upper mb-1">Total Business Expenses</p>
+    <p class="text-heading font-extrabold text-2xl">$<%= '%.2f' % (@total_business_cents / 100.0) %></p>
+  </div>
+  <div class="card p-5">
+    <p class="label-upper mb-1">Business Transactions</p>
+    <p class="text-heading font-extrabold text-2xl"><%= @business.count %></p>
+  </div>
+  <div class="card p-5">
+    <p class="label-upper mb-1">Needs Review</p>
+    <p class="text-heading font-extrabold text-2xl">
+      <% if @needs_review.count > 0 %>
+        <%= link_to @needs_review.count, expense_transactions_path(status: "needs_review"), class: "text-orange-400 hover:underline" %>
+      <% else %>
+        <span class="text-emerald-400">0</span>
+      <% end %>
+    </p>
+  </div>
+  <div class="card p-5">
+    <p class="label-upper mb-1">Total Uploads</p>
+    <p class="text-heading font-extrabold text-2xl"><%= ExpenseUpload.count %></p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <%# By Category %>
+  <div class="card p-5">
+    <h3 class="label-upper mb-4">By Category</h3>
+    <% if @by_category.any? %>
+      <div class="space-y-2">
+        <% @by_category.each do |category, cents| %>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-heading"><%= ExpenseTransaction::CATEGORIES[category] || category&.titleize || "Uncategorized" %></span>
+            <span class="font-mono text-heading">$<%= '%.2f' % (cents / 100.0) %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted text-sm">No data yet.</p>
+    <% end %>
+  </div>
+
+  <%# By Card %>
+  <div class="card p-5">
+    <h3 class="label-upper mb-4">By Card</h3>
+    <% if @by_card.any? %>
+      <div class="space-y-2">
+        <% @by_card.each do |card, cents| %>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-heading"><%= PaymentMethod.find_by(parser_key: card)&.name || card&.titleize || "Unknown" %></span>
+            <span class="font-mono text-heading">$<%= '%.2f' % (cents / 100.0) %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted text-sm">No data yet.</p>
+    <% end %>
+  </div>
+
+  <%# By Account %>
+  <div class="card p-5">
+    <h3 class="label-upper mb-4">By Account</h3>
+    <% if @by_account.any? %>
+      <div class="space-y-2">
+        <% @by_account.each do |account, cents| %>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-heading"><%= ExpenseTransaction::ACCOUNTS[account] || account&.titleize || "Unassigned" %></span>
+            <span class="font-mono text-heading">$<%= '%.2f' % (cents / 100.0) %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted text-sm">No data yet.</p>
+    <% end %>
+  </div>
+
+  <%# By Month %>
+  <div class="card p-5">
+    <h3 class="label-upper mb-4">By Month</h3>
+    <% if @by_month.any? %>
+      <div class="space-y-2">
+        <% @by_month.each do |month, cents| %>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-heading"><%= month %></span>
+            <span class="font-mono text-heading">$<%= '%.2f' % (cents / 100.0) %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted text-sm">No data yet.</p>
+    <% end %>
+  </div>
+</div>

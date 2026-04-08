@@ -1,0 +1,37 @@
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-extrabold text-heading">Expense Guide</h1>
+      <p class="text-secondary text-sm mt-1">Classification rules fed to the AI evaluator</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-muted text-sm"><%= @feedback_count %> user overrides</span>
+      <%= button_to "Generate from Feedback", generate_from_feedback_expense_guide_path,
+          method: :post, class: "btn btn-outline btn-sm",
+          data: { turbo_confirm: "Regenerate the guide from #{@feedback_count} user overrides? This will replace the current content." } %>
+    </div>
+  </div>
+
+  <%# Preview %>
+  <div class="card p-6 mb-6">
+    <h3 class="label-upper mb-4">Preview</h3>
+    <div class="prose prose-sm prose-invert max-w-none text-body
+                prose-headings:text-heading prose-strong:text-heading
+                prose-a:text-primary prose-code:text-primary
+                prose-pre:bg-surface-alt prose-pre:border prose-pre:border-subtle">
+      <%= @rendered_content %>
+    </div>
+  </div>
+
+  <%# Editor %>
+  <div class="card p-6">
+    <h3 class="label-upper mb-4">Editor</h3>
+    <%= form_tag expense_guide_path, method: :patch do %>
+      <textarea name="content" rows="20" class="input-field text-sm font-mono w-full mb-4"><%= @guide.content %></textarea>
+      <div class="flex items-center gap-3">
+        <%= submit_tag "Save Guide", class: "btn btn-primary btn-sm" %>
+        <%= link_to "Back to Expenses", expense_uploads_path, class: "btn btn-outline btn-sm" %>
+      </div>
+    <% end %>
+  </div>
+</div>

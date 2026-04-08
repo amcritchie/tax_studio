@@ -1,0 +1,115 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold text-heading">Expense Transactions</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to "Uploads", expense_uploads_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "Summary", summary_expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <%= link_to "2025 Tax Report", tax_report_expense_transactions_path(year: 2025), class: "btn btn-outline btn-sm" %>
+    <%= link_to "Export CSV", export_expense_transactions_path, class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<%# Filters %>
+<div class="card p-4 mb-6">
+  <%= form_tag expense_transactions_path, method: :get, class: "flex flex-wrap gap-3 items-end" do %>
+    <div>
+      <label class="label-upper mb-1 block">Search</label>
+      <%= text_field_tag :q, params[:q], placeholder: "Vendor or description...", class: "input-field text-sm", style: "width: 200px" %>
+    </div>
+    <div>
+      <label class="label-upper mb-1 block">Status</label>
+      <%= select_tag :status,
+        options_for_select([["All", ""]] + ExpenseTransaction::STATUS_VALUES.map { |s| [s.titleize, s] }, params[:status]),
+        class: "input-field text-sm", style: "width: 150px" %>
+    </div>
+    <div>
+      <label class="label-upper mb-1 block">Category</label>
+      <%= select_tag :category,
+        options_for_select([["All", ""]] + ExpenseTransaction::CATEGORIES.map { |k, v| [v, k] }, params[:category]),
+        class: "input-field text-sm", style: "width: 180px" %>
+    </div>
+    <div>
+      <label class="label-upper mb-1 block">Account</label>
+      <%= select_tag :account,
+        options_for_select([["All", ""]] + ExpenseTransaction::ACCOUNTS.map { |k, v| [v, k] }, params[:account]),
+        class: "input-field text-sm", style: "width: 160px" %>
+    </div>
+    <div>
+      <label class="label-upper mb-1 block">Card</label>
+      <%= select_tag :payment_method,
+        options_for_select([["All", ""]] + PaymentMethod.ordered.map { |pm| [pm.name, pm.parser_key] }, params[:payment_method]),
+        class: "input-field text-sm", style: "width: 170px" %>
+    </div>
+    <div>
+      <%= submit_tag "Filter", class: "btn btn-outline btn-sm" %>
+      <% if params.except(:controller, :action).values.any?(&:present?) %>
+        <%= link_to "Clear", expense_transactions_path, class: "btn btn-sm text-secondary hover:text-heading" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<p class="text-muted text-sm mb-3"><%= @total_count %> transactions</p>
+
+<% if @transactions.any? %>
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-surface-alt text-muted text-left">
+          <th class="px-4 py-3 font-medium">Date</th>
+          <th class="px-4 py-3 font-medium">Vendor / Description</th>
+          <th class="px-4 py-3 font-medium text-right">Amount</th>
+          <th class="px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3 font-medium">Category</th>
+          <th class="px-4 py-3 font-medium">Account</th>
+          <th class="px-4 py-3 font-medium">Card</th>
+          <th class="px-4 py-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-subtle">
+        <% @transactions.each do |txn| %>
+          <tr x-data="{ excluded: <%= txn.excluded %> }"
+              @exclude-toggled.window="if ($event.detail.slug === '<%= txn.slug %>') { excluded = $event.detail.excluded }"
+              class="hover:bg-surface-alt/50 transition" :class="excluded && 'opacity-50'">
+            <td class="px-4 py-3 text-secondary whitespace-nowrap"><%= txn.transaction_date.strftime("%m/%d/%y") %></td>
+            <td class="px-4 py-3">
+              <%= link_to expense_transaction_path(txn.slug), class: "text-heading hover:text-primary transition" do %>
+                <span class="font-medium"><%= txn.vendor || truncate(txn.raw_description, length: 45) %></span>
+              <% end %>
+              <% if txn.needs_review? %>
+                <p class="text-orange-400 text-xs mt-0.5"><%= truncate(txn.ai_question.to_s, length: 60) %></p>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-heading whitespace-nowrap"><%= txn.formatted_amount %></td>
+            <td class="px-4 py-3"><%= render "status_badge", txn: txn %></td>
+            <td class="px-4 py-3 text-secondary text-xs"><%= txn.category_display %></td>
+            <td class="px-4 py-3 text-secondary text-xs"><%= txn.account_display %></td>
+            <td class="px-4 py-3 text-muted text-xs"><%= txn.payment_method&.titleize %></td>
+            <td class="px-4 py-3">
+              <%= render "expense_transactions/exclude_toggle", txn: txn %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# Pagination %>
+  <% total_pages = (@total_count.to_f / @per_page).ceil %>
+  <% if total_pages > 1 %>
+    <div class="flex justify-center gap-2 mt-6">
+      <% (1..total_pages).each do |page| %>
+        <% if page == @page %>
+          <span class="btn btn-sm btn-primary"><%= page %></span>
+        <% else %>
+          <%= link_to page, expense_transactions_path(params.permit!.merge(page: page)), class: "btn btn-sm btn-outline" %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="empty-state">
+    <p class="text-secondary">No transactions found.</p>
+  </div>
+<% end %>
+
+<%= render "expense_transactions/exclude_modal" %>

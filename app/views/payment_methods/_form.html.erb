@@ -1,0 +1,62 @@
+<%= form_with model: @payment_method, url: @payment_method.persisted? ? payment_method_path(@payment_method.slug) : payment_methods_path, class: "card p-6 space-y-5" do |f| %>
+  <div>
+    <label class="label-upper mb-2 block">Name</label>
+    <%= f.text_field :name, class: "input-field", required: true, placeholder: "e.g. Robinhood Gold" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="label-upper mb-2 block">Last Four Digits</label>
+      <%= f.text_field :last_four, class: "input-field", placeholder: "e.g. 4321", maxlength: 4 %>
+    </div>
+    <div>
+      <label class="label-upper mb-2 block">Position</label>
+      <%= f.number_field :position, class: "input-field", value: @payment_method.position || 0 %>
+    </div>
+  </div>
+
+  <div>
+    <label class="label-upper mb-2 block">CSV Parser Key</label>
+    <%= f.select :parser_key,
+      options_for_select(
+        [["None (no auto-parser)", ""]] + Expenses::CsvParser::CARD_PATTERNS.keys.map { |k| [k.titleize, k] },
+        @payment_method.parser_key
+      ),
+      {}, class: "input-field" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="label-upper mb-2 block">Primary Color</label>
+      <div class="flex items-center gap-3">
+        <%= f.color_field :color, class: "w-12 h-10 rounded-lg border border-strong cursor-pointer", value: @payment_method.color || "#8E82FE" %>
+        <span class="text-muted text-sm font-mono"><%= @payment_method.color || "#8E82FE" %></span>
+      </div>
+    </div>
+    <div>
+      <label class="label-upper mb-2 block">Secondary Color (optional)</label>
+      <div class="flex items-center gap-3">
+        <%= f.color_field :color_secondary, class: "w-12 h-10 rounded-lg border border-strong cursor-pointer", value: @payment_method.color_secondary || "#888888" %>
+        <span class="text-muted text-sm font-mono"><%= @payment_method.color_secondary || "none" %></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="label-upper mb-2 block">Logo Path</label>
+      <%= f.text_field :logo, class: "input-field", placeholder: "/payment_methods/example.svg" %>
+    </div>
+    <div>
+      <label class="label-upper mb-2 block">Status</label>
+      <%= f.select :status,
+        options_for_select(PaymentMethod::STATUS_VALUES.map { |s| [s.capitalize, s] }, @payment_method.status || "active"),
+        {}, class: "input-field" %>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <%= f.submit @payment_method.persisted? ? "Update" : "Create", class: "btn btn-primary" %>
+    <%= link_to "Cancel", payment_methods_path, class: "btn btn-outline" %>
+  </div>
+<% end %>
