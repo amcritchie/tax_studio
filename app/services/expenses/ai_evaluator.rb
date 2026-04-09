@@ -1,3 +1,5 @@
+require "net/http"
+
 module Expenses
   class AiEvaluator
     API_URL = "https://api.anthropic.com/v1/messages"

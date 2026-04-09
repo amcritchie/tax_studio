@@ -1,3 +1,5 @@
+require "net/http"
+
 class ExpenseGuidesController < ApplicationController
   before_action :require_admin
   before_action :set_guide
