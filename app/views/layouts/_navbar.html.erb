@@ -82,9 +82,12 @@
     <%= link_to "Summary", summary_expense_transactions_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
     <%= link_to "Tax Report", tax_report_expense_transactions_path(year: 2025), class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
     <%= link_to "Guide", expense_guide_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
-    <span class="ml-auto flex items-center gap-3">
-      <%= render "components/admin_dropdown" %>
-      <%= render "components/theme_toggle" %>
-    </span>
+    <% unless show_user %>
+      <%# Only show gear+moon here when logged out — when logged in, _user_nav already has them %>
+      <span class="ml-auto flex items-center gap-3">
+        <%= render "components/admin_dropdown" %>
+        <%= render "components/theme_toggle" %>
+      </span>
+    <% end %>
   </div>
 </header>
