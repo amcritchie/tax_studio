@@ -6,7 +6,8 @@ Studio.configure do |config|
   config.configure_sso_user = ->(user) { user.role = "viewer" }
   config.theme_logos = [
     { file: "favicon.png", title: "Favicon" },
-    { file: "logo.png",    title: "Logo" },
+    { file: "logo.png",    title: "Navbar Logo" },
+    { file: "logo.png",    title: "Auth Logo" },
   ]
   config.theme_primary = "#10B981"   # Emerald green
 end
