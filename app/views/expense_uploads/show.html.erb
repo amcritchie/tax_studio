@@ -72,7 +72,7 @@
     <% end %>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
     <div>
       <p class="text-muted">Transactions</p>
       <p class="text-heading font-bold text-lg"><%= @upload.transaction_count %></p>
@@ -93,6 +93,10 @@
       <div>
         <p class="text-muted">Needs Review</p>
         <p class="text-heading font-bold text-lg"><%= @upload.expense_transactions.needs_review.count %></p>
+      </div>
+      <div>
+        <p class="text-muted">Reviewed</p>
+        <p class="text-heading font-bold text-lg"><%= @upload.expense_transactions.reviewed.count %></p>
       </div>
     <% end %>
   </div>
@@ -242,7 +246,12 @@
               </td>
               <td class="px-4 py-3 text-secondary"><%= txn.category_display %></td>
               <td class="px-4 py-3 text-secondary"><%= txn.account_display %></td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 flex items-center gap-1">
+                <% if txn.status.in?(%w[reviewed classified]) %>
+                  <%= button_to re_evaluate_expense_transaction_path(txn.slug), method: :post, class: "text-secondary hover:text-primary transition shrink-0", title: "Re-evaluate with AI", data: { turbo_confirm: "Re-evaluate this transaction with AI?" } do %>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
+                  <% end %>
+                <% end %>
                 <%= render "expense_transactions/exclude_toggle", txn: txn %>
               </td>
             </tr>

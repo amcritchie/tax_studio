@@ -1,6 +1,6 @@
 class ExpenseTransactionsController < ApplicationController
   before_action :require_admin
-  before_action :set_transaction, only: [:show, :update, :answer_review, :toggle_exclude]
+  before_action :set_transaction, only: [:show, :update, :answer_review, :toggle_exclude, :re_evaluate]
 
   def index
     @transactions = ExpenseTransaction.includes(:expense_upload).recent
@@ -26,7 +26,7 @@ class ExpenseTransactionsController < ApplicationController
 
   def update
     rescue_and_log(target: @transaction) do
-      @transaction.update!(transaction_params.merge(manually_overridden: true, status: "classified"))
+      @transaction.update!(transaction_params.merge(manually_overridden: true, status: "reviewed"))
       respond_to do |format|
         format.html { redirect_to expense_transaction_path(@transaction.slug), notice: "Transaction updated." }
         format.json { render json: transaction_json }
@@ -67,7 +67,8 @@ class ExpenseTransactionsController < ApplicationController
         excluded: new_excluded,
         exclude_reason: params[:exclude_reason].presence,
         excluded_by: "user",
-        excluded_at: new_excluded ? Time.current : nil
+        excluded_at: new_excluded ? Time.current : nil,
+        status: "reviewed"
       }
       attrs[:account] = "personal" if new_excluded
       @transaction.update!(attrs)
@@ -79,6 +80,36 @@ class ExpenseTransactionsController < ApplicationController
   rescue StandardError => e
     respond_to do |format|
       format.html { redirect_back fallback_location: expense_transactions_path, alert: e.message }
+      format.json { render json: { error: e.message }, status: :unprocessable_entity }
+    end
+  end
+
+  def re_evaluate
+    rescue_and_log(target: @transaction) do
+      @transaction.update!(
+        status: "unreviewed",
+        classification: nil,
+        category: nil,
+        deduction_type: nil,
+        account: nil,
+        vendor: nil,
+        business_description: nil,
+        business_purpose: nil,
+        ai_question: nil,
+        user_answer: nil,
+        manually_overridden: false
+      )
+      evaluator = Expenses::AiEvaluator.new(@transaction.expense_upload)
+      evaluator.evaluate_single(@transaction)
+      @transaction.reload
+      respond_to do |format|
+        format.html { redirect_to expense_transaction_path(@transaction.slug), notice: "Transaction re-evaluated by AI." }
+        format.json { render json: transaction_json }
+      end
+    end
+  rescue StandardError => e
+    respond_to do |format|
+      format.html { redirect_to expense_transaction_path(@transaction.slug), alert: "Re-evaluation failed: #{e.message}" }
       format.json { render json: { error: e.message }, status: :unprocessable_entity }
     end
   end
@@ -144,7 +175,8 @@ class ExpenseTransactionsController < ApplicationController
       account_display: @transaction.account_display,
       deduction_type: @transaction.deduction_type,
       business_expense: @transaction.business_expense?,
-      needs_review: @transaction.needs_review?
+      needs_review: @transaction.needs_review?,
+      reviewed: @transaction.reviewed?
     }
   end
 end

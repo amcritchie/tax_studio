@@ -36,11 +36,12 @@ class ExpenseTransaction < ApplicationRecord
     "personal" => "Personal"
   }.freeze
 
-  STATUS_VALUES = %w[unreviewed classified needs_review excluded].freeze
+  STATUS_VALUES = %w[unreviewed classified needs_review reviewed].freeze
 
   scope :unreviewed, -> { where(status: "unreviewed") }
   scope :classified, -> { where(status: "classified") }
   scope :needs_review, -> { where(status: "needs_review") }
+  scope :reviewed, -> { where(status: "reviewed") }
   scope :not_excluded, -> { where(excluded: false) }
   scope :business_expenses, -> { where(classification: "business_expense", excluded: false) }
   scope :with_exclude_reason, -> { where.not(exclude_reason: [nil, ""]) }
@@ -77,6 +78,10 @@ class ExpenseTransaction < ApplicationRecord
 
   def needs_review?
     status == "needs_review"
+  end
+
+  def reviewed?
+    status == "reviewed"
   end
 
   def to_param

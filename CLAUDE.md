@@ -58,7 +58,7 @@ end
 - **User** — name, first_name, last_name, email, password_digest, provider, uid, role (admin/viewer), slug. `has_secure_password`, `include Sluggable`. Same structure as McRitchie Studio's User model.
 - **PaymentMethod** — name, slug (Sluggable), last_four, parser_key (maps to `CsvParser::CARD_PATTERNS`), color (hex), color_secondary (hex, optional), logo (path), position, status (active/inactive). `belongs_to :user`, `has_many :expense_uploads`. Scopes: `active`, `ordered`.
 - **ExpenseUpload** — filename, slug (upload-{id}), card_type, status (pending/processed/evaluating/evaluated), transaction_count, unique_transactions, duplicates_skipped, credits_skipped, processing_summary (jsonb), first/last_transaction_at, payment_method_id (FK). `belongs_to :user`, `belongs_to :payment_method` (optional), `has_many :expense_transactions`, `has_one_attached :file`.
-- **ExpenseTransaction** — slug (txn-{id}), transaction_date, raw_description, normalized_description, amount_cents, payment_method (string), AI classification fields (classification, category, deduction_type, account, vendor, business_description, business_purpose, ai_question, user_answer), status (unreviewed/classified/needs_review), exclude fields (excluded, exclude_reason, excluded_by, excluded_at). `belongs_to :expense_upload`.
+- **ExpenseTransaction** — slug (txn-{id}), transaction_date, raw_description, normalized_description, amount_cents, payment_method (string), AI classification fields (classification, category, deduction_type, account, vendor, business_description, business_purpose, ai_question, user_answer), status (unreviewed/classified/needs_review/reviewed), manually_overridden (boolean), exclude fields (excluded, exclude_reason, excluded_by, excluded_at). `belongs_to :expense_upload`. Status `reviewed` = user has taken action (manual override, exclude, or include). `classified` = AI-set only.
 - **ExpenseGuide** — content (markdown), slug. Singleton via `ExpenseGuide.current`. Provides classification rules fed to AI evaluator.
 - **ErrorLog** — from studio engine.
 - **ThemeSetting** — from studio engine.
@@ -66,7 +66,7 @@ end
 ## Services
 
 - **Expenses::CsvParser** — Parses CSV/XLSX bank statements. Detects card format via `CARD_PATTERNS` (citi, capital_one_spark, chase, amex_platinum, robinhood) by scanning up to 20 rows for header patterns. Handles Amex XLSX metadata preamble. Auto-links PaymentMethod on detection. Deduplicates by normalized description + amount + date range.
-- **Expenses::AiEvaluator** — Batch classifies transactions via Claude Haiku API. Processes in batches of 20 with ActionCable progress. Classifies as business_expense/not_business_expense/needs_review. `reclassify_with_answer` for needs_review follow-ups. **Important**: Requires `require "net/http"` at top of file — the Thread context doesn't autoload it.
+- **Expenses::AiEvaluator** — Batch classifies transactions via Claude Haiku API. Processes in batches of 20 with ActionCable progress. Classifies as business_expense/not_business_expense/needs_review. `evaluate_single(transaction)` for re-evaluating one transaction. `reclassify_with_answer` for needs_review follow-ups. **Important**: Requires `require "net/http"` at top of file — the Thread context doesn't autoload it.
 - **Expenses::Exporter** — CSV export of business expenses.
 
 ## Channel
@@ -85,7 +85,8 @@ Simplified paths (whole app is expenses):
 - `/uploads/new` — Upload with drag-and-drop + payment method picker
 - `/uploads/:slug` — Upload detail with inline review for needs_review transactions
 - `/transactions` — Filterable transaction list with status/category/account/card/month filters
-- `/transactions/:slug` — Transaction detail with manual override form
+- `/transactions/:slug` — Transaction detail with manual override form + re-evaluate button
+- `/transactions/:slug/re_evaluate` — POST: reset and re-run AI classification on a single transaction
 - `/transactions/summary` — Expense summary by category/card/account/month
 - `/transactions/tax_report` — Annual tax report with deduction breakdown
 - `/transactions/export` — CSV export of business expenses
@@ -98,8 +99,10 @@ Simplified paths (whole app is expenses):
 ## Key Patterns
 
 - **Upload pipeline**: pending → processed (CsvParser) → evaluating (AiEvaluator with ActionCable) → evaluated
+- **Transaction status lifecycle**: `unreviewed` → AI sets `classified` or `needs_review` → user action (manual override, exclude, include, approve) sets `reviewed`. Re-evaluate resets to `unreviewed` then AI re-classifies. Badge colors: unreviewed=warning, classified+business=emerald, classified+personal=gray, needs_review=orange, reviewed=violet.
 - **Inline review**: needs_review transactions expand in the upload show view with AI question, answer input, category/account selects, approve/exclude buttons. Uses Alpine.js `inlineReview` component with JSON fetch to `/transactions/:slug.json`.
-- **Exclude modal**: Shared modal component (`_exclude_modal.html.erb`) triggered by `open-exclude-modal` custom event. Reason required (server-side validated). Quick-select dropdown with presets (Personal Dining, Personal Travel, Entertainment, Health, Groceries, Home Expense) for excludes. Posts to `/transactions/:slug/toggle_exclude.json`. Excluding auto-sets account to "personal"; re-including does NOT revert account.
+- **Exclude modal**: Shared modal component (`_exclude_modal.html.erb`) triggered by `open-exclude-modal` custom event. Reason required (server-side validated). Quick-select dropdown with presets (Personal Dining, Personal Travel, Entertainment, Health, Groceries, Home Expense, Discretionary, Gifts, Vacation) for excludes. Posts to `/transactions/:slug/toggle_exclude.json`. Excluding auto-sets account to "personal" and status to "reviewed"; re-including also sets status to "reviewed".
+- **Re-evaluate**: Icon button on classified/reviewed transaction rows (upload show + transaction show). Resets all AI fields, calls `AiEvaluator#evaluate_single`, returns fresh classification. Confirmation dialog before submitting.
 - **Batch exclude**: On upload show page, modal receives `vendor_slugs` local (vendor→slugs lookup via `data-` attribute). Shows "Update X similar transactions" checkbox when other non-excluded transactions share the same vendor. Batch-submits to each matching transaction.
 - **Radio toggle**: Include/Exclude toggle on each transaction row (`_exclude_toggle.html.erb`). Visual state synced via `exclude-toggled` custom event.
 - **Google search**: Each transaction row in upload show has a search icon linking to Google search of the raw description (opens in new tab).
@@ -109,7 +112,7 @@ Simplified paths (whole app is expenses):
 Same pattern as McRitchie Studio — see top-level `CLAUDE.md`.
 
 - ExpenseUploadsController: create, destroy, process_file, evaluate all wrapped with `target: @upload`
-- ExpenseTransactionsController: update, answer_review, toggle_exclude wrapped with `target: @transaction`
+- ExpenseTransactionsController: update, answer_review, toggle_exclude, re_evaluate wrapped with `target: @transaction`
 - ExpenseGuidesController: update, generate_from_feedback wrapped with `target: @guide`
 - PaymentMethodsController: create, update, destroy wrapped with `target: @payment_method`
 

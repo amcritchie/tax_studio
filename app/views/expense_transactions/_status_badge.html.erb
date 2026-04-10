@@ -12,5 +12,7 @@
     <% end %>
   <% when "needs_review" %>
     <%= render "components/badge", text: "Needs Review", scheme: "orange" %>
+  <% when "reviewed" %>
+    <%= render "components/badge", text: "Reviewed", scheme: "violet" %>
   <% end %>
 <% end %>

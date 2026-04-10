@@ -85,6 +85,16 @@ module Expenses
       end
     end
 
+    def evaluate_single(transaction)
+      prompt = build_batch_prompt([transaction])
+      response = call_api(prompt)
+      results = parse_response(response)
+
+      if results&.first
+        apply_classification(transaction, results.first)
+      end
+    end
+
     def reclassify_with_answer(transaction)
       prompt = build_reclassify_prompt(transaction)
       response = call_api(prompt)

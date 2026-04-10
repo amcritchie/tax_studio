@@ -20,6 +20,7 @@ Rails.application.routes.draw do
     member do
       post :answer_review
       post :toggle_exclude
+      post :re_evaluate
     end
     collection do
       get :export
