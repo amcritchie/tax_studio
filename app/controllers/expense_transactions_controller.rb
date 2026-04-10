@@ -60,12 +60,16 @@ class ExpenseTransactionsController < ApplicationController
   def toggle_exclude
     rescue_and_log(target: @transaction) do
       new_excluded = !@transaction.excluded
+      if new_excluded && params[:exclude_reason].blank?
+        raise "Exclude reason is required"
+      end
       attrs = {
         excluded: new_excluded,
         exclude_reason: params[:exclude_reason].presence,
         excluded_by: "user",
         excluded_at: new_excluded ? Time.current : nil
       }
+      attrs[:account] = "personal" if new_excluded
       @transaction.update!(attrs)
       respond_to do |format|
         format.html { redirect_back fallback_location: expense_transactions_path, notice: @transaction.excluded ? "Excluded." : "Included." }

@@ -1,27 +1,48 @@
 <%# Exclude/Include modal — rendered once per page, self-contained Alpine component %>
-<div x-data="{
+<% vs = local_assigns.fetch(:vendor_slugs, nil) %>
+<div data-vendor-slugs="<%= vs ? vs.to_json : '' %>"
+     x-data="{
        open: false, loading: false, errorMsg: '', reason: '',
        slug: '', vendor: '', excluded: false,
+       similarSlugs: [], applyToSimilar: false,
+       _vendorSlugs: null,
        get csrfToken() { return document.querySelector('meta[name=&quot;csrf-token&quot;]')?.content },
+       init() {
+         const raw = this.$el.dataset.vendorSlugs;
+         this._vendorSlugs = raw ? JSON.parse(raw) : null;
+       },
        openModal(detail) {
          this.slug = detail.slug; this.vendor = detail.vendor || '';
          this.excluded = detail.excluded; this.reason = ''; this.errorMsg = '';
+         const vendorKey = this.vendor.toLowerCase().trim();
+         const all = this._vendorSlugs && this._vendorSlugs[vendorKey] || [];
+         this.similarSlugs = all.filter(s => s !== this.slug);
+         this.applyToSimilar = false;
          this.loading = false; this.open = true;
          this.$nextTick(() => this.$refs.reasonInput?.focus());
        },
        close() { this.open = false },
+       async toggleOne(slug) {
+         const res = await fetch('/transactions/' + slug + '/toggle_exclude.json', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken },
+           body: JSON.stringify({ exclude_reason: this.reason.trim() })
+         });
+         if (!res.ok) throw new Error((await res.json()).error || 'Toggle failed');
+         return await res.json();
+       },
        async submit() {
          if (!this.reason.trim()) return;
          this.loading = true; this.errorMsg = '';
          try {
-           const res = await fetch('/transactions/' + this.slug + '/toggle_exclude.json', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken },
-             body: JSON.stringify({ exclude_reason: this.reason.trim() })
-           });
-           if (!res.ok) throw new Error((await res.json()).error || 'Toggle failed');
-           const data = await res.json();
+           const data = await this.toggleOne(this.slug);
            window.dispatchEvent(new CustomEvent('exclude-toggled', { detail: data }));
+           if (this.applyToSimilar && this.similarSlugs.length > 0) {
+             for (const s of this.similarSlugs) {
+               const d = await this.toggleOne(s);
+               window.dispatchEvent(new CustomEvent('exclude-toggled', { detail: d }));
+             }
+           }
            this.close();
          } catch (e) { this.errorMsg = e.message; }
          finally { this.loading = false; }
@@ -52,10 +73,28 @@
 
     <div class="mb-4">
       <label class="label-upper mb-1 block" x-text="excluded ? 'Why include this?' : 'Why exclude this?'"></label>
+      <template x-if="!excluded">
+        <select @change="reason = $event.target.value; $event.target.value = ''" class="input-field text-sm w-full mb-2">
+          <option value="">Quick select...</option>
+          <option value="Personal Dining">Personal Dining</option>
+          <option value="Personal Travel">Personal Travel</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Health">Health</option>
+          <option value="Groceries">Groceries</option>
+          <option value="Home Expense">Home Expense</option>
+        </select>
+      </template>
       <textarea x-model="reason" x-ref="reasonInput" rows="3" class="input-field text-sm w-full"
                 :placeholder="excluded ? 'e.g. This is actually a business expense for...' : 'e.g. This is a personal purchase...'"
                 @keydown.meta.enter="submit()" @keydown.ctrl.enter="submit()"></textarea>
     </div>
+
+    <template x-if="similarSlugs.length > 0 && !excluded">
+      <label class="flex items-center gap-2 mb-4 text-sm text-secondary cursor-pointer">
+        <input type="checkbox" x-model="applyToSimilar" class="rounded border-subtle bg-surface-alt text-primary">
+        <span>Update <span class="font-bold text-heading" x-text="similarSlugs.length"></span> similar transaction<span x-show="similarSlugs.length !== 1">s</span></span>
+      </label>
+    </template>
 
     <div class="flex items-center justify-end gap-3">
       <button @click="close()" class="btn btn-outline btn-sm" :disabled="loading">Cancel</button>

@@ -111,6 +111,7 @@
 
 <%# Transactions Table %>
 <% if @transactions.any? %>
+  <% vendor_slugs = @transactions.reject(&:excluded).group_by { |t| (t.vendor || t.raw_description).to_s.downcase.strip }.transform_values { |txns| txns.map(&:slug) } %>
   <div class="card overflow-hidden">
     <table class="w-full text-sm">
       <thead>
@@ -132,9 +133,14 @@
             <tr class="hover:bg-surface-alt/50 transition">
               <td class="px-4 py-3 text-secondary"><%= txn.transaction_date.strftime("%m/%d/%y") %></td>
               <td class="px-4 py-3">
-                <%= link_to expense_transaction_path(txn.slug), class: "text-heading hover:text-primary transition" do %>
-                  <span class="font-medium"><%= txn.vendor || truncate(txn.raw_description, length: 50) %></span>
-                <% end %>
+                <div class="flex items-center gap-1.5">
+                  <%= link_to expense_transaction_path(txn.slug), class: "text-heading hover:text-primary transition" do %>
+                    <span class="font-medium"><%= txn.vendor || truncate(txn.raw_description, length: 50) %></span>
+                  <% end %>
+                  <a href="https://www.google.com/search?q=<%= ERB::Util.url_encode(txn.raw_description) %>" target="_blank" rel="noopener" class="text-secondary hover:text-primary shrink-0" title="Search Google">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                  </a>
+                </div>
               </td>
               <td class="px-4 py-3 text-right font-mono text-heading"><%= txn.formatted_amount %></td>
               <td class="px-4 py-3">
@@ -221,9 +227,14 @@
                 class="hover:bg-surface-alt/50 transition" :class="excluded && 'opacity-50'">
               <td class="px-4 py-3 text-secondary"><%= txn.transaction_date.strftime("%m/%d/%y") %></td>
               <td class="px-4 py-3">
-                <%= link_to expense_transaction_path(txn.slug), class: "text-heading hover:text-primary transition" do %>
-                  <span class="font-medium"><%= txn.vendor || truncate(txn.raw_description, length: 50) %></span>
-                <% end %>
+                <div class="flex items-center gap-1.5">
+                  <%= link_to expense_transaction_path(txn.slug), class: "text-heading hover:text-primary transition" do %>
+                    <span class="font-medium"><%= txn.vendor || truncate(txn.raw_description, length: 50) %></span>
+                  <% end %>
+                  <a href="https://www.google.com/search?q=<%= ERB::Util.url_encode(txn.raw_description) %>" target="_blank" rel="noopener" class="text-secondary hover:text-primary shrink-0" title="Search Google">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                  </a>
+                </div>
               </td>
               <td class="px-4 py-3 text-right font-mono text-heading"><%= txn.formatted_amount %></td>
               <td class="px-4 py-3">
@@ -330,4 +341,4 @@
   </div>
 <% end %>
 
-<%= render "expense_transactions/exclude_modal" %>
+<%= render "expense_transactions/exclude_modal", vendor_slugs: (defined?(vendor_slugs) ? vendor_slugs : nil) %>

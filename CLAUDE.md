@@ -99,8 +99,10 @@ Simplified paths (whole app is expenses):
 
 - **Upload pipeline**: pending → processed (CsvParser) → evaluating (AiEvaluator with ActionCable) → evaluated
 - **Inline review**: needs_review transactions expand in the upload show view with AI question, answer input, category/account selects, approve/exclude buttons. Uses Alpine.js `inlineReview` component with JSON fetch to `/transactions/:slug.json`.
-- **Exclude modal**: Shared modal component (`_exclude_modal.html.erb`) triggered by `open-exclude-modal` custom event. Requires a reason. Posts to `/transactions/:slug/toggle_exclude.json`.
+- **Exclude modal**: Shared modal component (`_exclude_modal.html.erb`) triggered by `open-exclude-modal` custom event. Reason required (server-side validated). Quick-select dropdown with presets (Personal Dining, Personal Travel, Entertainment, Health, Groceries, Home Expense) for excludes. Posts to `/transactions/:slug/toggle_exclude.json`. Excluding auto-sets account to "personal"; re-including does NOT revert account.
+- **Batch exclude**: On upload show page, modal receives `vendor_slugs` local (vendor→slugs lookup via `data-` attribute). Shows "Update X similar transactions" checkbox when other non-excluded transactions share the same vendor. Batch-submits to each matching transaction.
 - **Radio toggle**: Include/Exclude toggle on each transaction row (`_exclude_toggle.html.erb`). Visual state synced via `exclude-toggled` custom event.
+- **Google search**: Each transaction row in upload show has a search icon linking to Google search of the raw description (opens in new tab).
 
 ## Error Handling
 
