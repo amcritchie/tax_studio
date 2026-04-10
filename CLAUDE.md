@@ -12,7 +12,7 @@ Standalone expense tracking satellite app — CSV parsing, AI classification, an
 - **Heroku**: Not yet deployed (deferred)
 - **Domain**: `tax.mcritchie.studio`
 - **Repo**: https://github.com/amcritchie/tax_studio
-- **Env vars needed**: `RAILS_MASTER_KEY`, `RAILS_SERVE_STATIC_FILES`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, `REDIS_URL` (for ActionCable)
+- **Env vars needed**: `RAILS_MASTER_KEY`, `RAILS_SERVE_STATIC_FILES`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, `REDIS_URL` (for ActionCable), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
 ## Tech Stack
 
@@ -24,6 +24,7 @@ Standalone expense tracking satellite app — CSV parsing, AI classification, an
 - ActionCable for real-time AI evaluation progress
 - `roo` gem for XLSX parsing
 - `redcarpet` gem for markdown rendering (expense guide)
+- Google OAuth via `omniauth-google-oauth2` + `omniauth-rails_csrf_protection` gems
 - **Studio engine gem** — `gem "studio", git: "https://github.com/amcritchie/studio.git"`
 
 ## Studio Engine
@@ -35,7 +36,11 @@ Studio.configure do |config|
   config.welcome_message = ->(user) { "Welcome to Tax Studio, #{user.display_name}!" }
   config.registration_params = [:name, :email, :password, :password_confirmation]
   config.configure_sso_user = ->(user) { user.role = "viewer" }
-  config.theme_logos = %w[favicon.png logo.png]
+  config.theme_logos = [
+    { file: "favicon.png",  title: "Favicon" },
+    { file: "logo.png",     title: "Navbar Logo" },
+    { file: "logo.png",     title: "Auth Logo" },
+  ]
   config.theme_primary = "#10B981"
 end
 ```
@@ -46,7 +51,7 @@ end
 
 - **Primary**: `#10B981` Emerald green
 - **Logo**: "Tax **Studio**" (Studio in primary color)
-- **Navbar**: Sticky, links to Uploads, Transactions, Summary, Tax Report, Guide. McRitchie Studio link for SSO hub. Admin dropdown with Payment Methods, Theme, Error Logs.
+- **Navbar**: Extracted to `layouts/_navbar.html.erb` — sticky with scroll hysteresis (Alpine.js), logo via `Studio.logo_for("Navbar Logo")`, brand title auto-split ("Tax **Studio**"), full nav links (Uploads, Transactions, Summary, Tax Report, Guide), McRitchie Studio link for SSO hub, mobile sub-navbar, admin dropdown with Payment Methods, Navbar, Theme, Error Logs.
 
 ## Models
 
@@ -86,8 +91,9 @@ Simplified paths (whole app is expenses):
 - `/transactions/export` — CSV export of business expenses
 - `/guide` — Expense classification guide (preview + editor + generate from feedback)
 - `/payment_methods` — Payment methods CRUD (admin)
-- `/admin/theme`, `/error_logs` — From studio engine
+- `/admin/theme`, `/admin/navbar`, `/error_logs` — From studio engine (navbar route added locally)
 - `/login`, `/signup`, `/logout`, `/sso_login` — Auth from studio engine
+- `/auth/google_oauth2/callback` — Google OAuth callback from studio engine
 
 ## Key Patterns
 
