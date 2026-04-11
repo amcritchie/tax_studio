@@ -25,19 +25,39 @@
       {}, class: "input-field" %>
   </div>
 
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-2 gap-4"
+       x-data="{
+         color: '<%= @payment_method.color || '#8E82FE' %>',
+         colorSecondary: '<%= @payment_method.color_secondary || '#888888' %>',
+         normalizeHex(val) {
+           val = val.trim();
+           if (!val.startsWith('#')) val = '#' + val;
+           if (/^#[0-9a-fA-F]{3}$/.test(val)) val = '#' + val[1]+val[1] + val[2]+val[2] + val[3]+val[3];
+           return /^#[0-9a-fA-F]{6}$/.test(val) ? val : null;
+         }
+       }">
     <div>
       <label class="label-upper mb-2 block">Primary Color</label>
       <div class="flex items-center gap-3">
-        <%= f.color_field :color, class: "w-12 h-10 rounded-lg border border-strong cursor-pointer", value: @payment_method.color || "#8E82FE" %>
-        <span class="text-muted text-sm font-mono"><%= @payment_method.color || "#8E82FE" %></span>
+        <input type="color" :value="color" @input="color = $event.target.value"
+               class="w-12 h-10 rounded-lg border border-strong cursor-pointer">
+        <input type="text" name="payment_method[color]" x-model="color"
+               @blur="let n = normalizeHex(color); if (n) color = n;"
+               class="text-sm font-mono text-secondary"
+               style="background: transparent; border: 1px solid var(--color-border-subtle); border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 5.5rem; outline: none;"
+               spellcheck="false">
       </div>
     </div>
     <div>
       <label class="label-upper mb-2 block">Secondary Color (optional)</label>
       <div class="flex items-center gap-3">
-        <%= f.color_field :color_secondary, class: "w-12 h-10 rounded-lg border border-strong cursor-pointer", value: @payment_method.color_secondary || "#888888" %>
-        <span class="text-muted text-sm font-mono"><%= @payment_method.color_secondary || "none" %></span>
+        <input type="color" :value="colorSecondary" @input="colorSecondary = $event.target.value"
+               class="w-12 h-10 rounded-lg border border-strong cursor-pointer">
+        <input type="text" name="payment_method[color_secondary]" x-model="colorSecondary"
+               @blur="let n = normalizeHex(colorSecondary); if (n) colorSecondary = n;"
+               class="text-sm font-mono text-secondary"
+               style="background: transparent; border: 1px solid var(--color-border-subtle); border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 5.5rem; outline: none;"
+               spellcheck="false">
       </div>
     </div>
   </div>
