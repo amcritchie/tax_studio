@@ -24,8 +24,13 @@ Rails.application.routes.draw do
     end
     collection do
       get :export
+      get :export_full
+      post :import_data
       get :summary
       get :tax_report
+      get :turbotax
+      get :turbotax_txf
+      get :turbotax_csv
     end
   end
 

@@ -4,8 +4,16 @@
     <p class="text-secondary text-sm mt-1">Business expense summary for tax filing</p>
   </div>
   <div class="flex items-center gap-3">
-    <%= link_to "All Transactions", expense_transactions_path, class: "btn btn-outline btn-sm" %>
-    <%= link_to "Summary", summary_expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <% [2025, 2026].each do |y| %>
+      <% if y == @year %>
+        <span class="btn btn-primary btn-sm cursor-default"><%= y %></span>
+      <% else %>
+        <%= link_to y, tax_report_expense_transactions_path(year: y), class: "btn btn-outline btn-sm" %>
+      <% end %>
+    <% end %>
+    <span class="border-l border-subtle h-5"></span>
+    <%= link_to "TurboTax", turbotax_expense_transactions_path(year: @year), class: "btn btn-outline btn-sm" %>
+    <%= link_to "Full Export", export_full_expense_transactions_path(year: @year), class: "btn btn-outline btn-sm" %>
     <%= link_to "Export CSV", export_expense_transactions_path, class: "btn btn-primary btn-sm" %>
   </div>
 </div>

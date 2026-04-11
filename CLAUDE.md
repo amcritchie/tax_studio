@@ -1,6 +1,6 @@
 # Tax Studio
 
-Standalone expense tracking satellite app — CSV parsing, AI classification, and tax reporting. Extracted from McRitchie Studio.
+Standalone expense tracking satellite app — CSV parsing, AI classification, tax reporting, and TurboTax export. Extracted from McRitchie Studio.
 
 ## Dev Server
 
@@ -57,17 +57,21 @@ end
 
 - **User** — name, first_name, last_name, email, password_digest, provider, uid, role (admin/viewer), slug. `has_secure_password`, `include Sluggable`. Same structure as McRitchie Studio's User model.
 - **PaymentMethod** — name, slug (Sluggable), last_four, parser_key (maps to `CsvParser::CARD_PATTERNS`), color (hex), color_secondary (hex, optional), logo (path), position, status (active/inactive). `belongs_to :user`, `has_many :expense_uploads`. Scopes: `active`, `ordered`.
-- **ExpenseUpload** — filename, slug (upload-{id}), card_type, status (pending/processed/evaluating/evaluated), transaction_count, unique_transactions, duplicates_skipped, credits_skipped, processing_summary (jsonb), first/last_transaction_at, payment_method_id (FK). `belongs_to :user`, `belongs_to :payment_method` (optional), `has_many :expense_transactions`, `has_one_attached :file`.
-- **ExpenseTransaction** — slug (txn-{id}), transaction_date, raw_description, normalized_description, amount_cents, payment_method (string), AI classification fields (classification, category, deduction_type, account, vendor, business_description, business_purpose, ai_question, user_answer), status (unreviewed/classified/needs_review/reviewed), manually_overridden (boolean), exclude fields (excluded, exclude_reason, excluded_by, excluded_at). `belongs_to :expense_upload`. Status `reviewed` = user has taken action (manual override, exclude, or include). `classified` = AI-set only.
+- **ExpenseUpload** — filename, slug (upload-{id}), card_type, status (pending/processed/evaluating/evaluated), transaction_count, unique_transactions, credits_skipped, processing_summary (jsonb), first/last_transaction_at, payment_method_id (FK). `belongs_to :user`, `belongs_to :payment_method` (optional), `has_many :expense_transactions`, `has_one_attached :file`. Note: `duplicates_skipped` column exists in DB but is unused (duplicate checking removed).
+- **ExpenseTransaction** — slug (txn-{id}), transaction_date, raw_description, normalized_description, amount_cents, payment_method (string), AI classification fields (classification, category, deduction_type, account, vendor, business_description, business_purpose, ai_question, user_answer), status (unreviewed/classified/needs_review/reviewed), manually_overridden (boolean), exclude fields (excluded, exclude_reason, excluded_by, excluded_at). `belongs_to :expense_upload`. Status `reviewed` = user has taken action (manual override, exclude, or include). `classified` = AI-set only. Has `SCHEDULE_C_MAPPING` constant mapping categories to Schedule C lines + TXF ref numbers.
 - **ExpenseGuide** — content (markdown), slug. Singleton via `ExpenseGuide.current`. Provides classification rules fed to AI evaluator.
 - **ErrorLog** — from studio engine.
 - **ThemeSetting** — from studio engine.
 
 ## Services
 
-- **Expenses::CsvParser** — Parses CSV/XLSX bank statements. Detects card format via `CARD_PATTERNS` (citi, capital_one_spark, chase, amex_platinum, robinhood) by scanning up to 20 rows for header patterns. Handles Amex XLSX metadata preamble. Auto-links PaymentMethod on detection. Deduplicates by normalized description + amount + date range.
+- **Expenses::CsvParser** — Parses CSV/XLSX bank statements. Detects card format via `CARD_PATTERNS` (citi, capital_one_spark, chase, amex_platinum, robinhood) by scanning up to 20 rows for header patterns. Handles Amex XLSX metadata preamble. Auto-links PaymentMethod on detection. No duplicate checking — all non-credit rows import. Skipped credits are tracked with details in `processing_summary["skipped"]` for display on upload show page. **Important**: Citi and Chase both use `date_format: "%m/%d/%Y"` — without this, Ruby's `Date.parse` swaps month/day on US-format dates.
 - **Expenses::AiEvaluator** — Batch classifies transactions via Claude Haiku API. Processes in batches of 20 with ActionCable progress. Classifies as business_expense/not_business_expense/needs_review. `evaluate_single(transaction)` for re-evaluating one transaction. `reclassify_with_answer` for needs_review follow-ups. **Important**: Requires `require "net/http"` at top of file — the Thread context doesn't autoload it.
-- **Expenses::Exporter** — CSV export of business expenses.
+- **Expenses::Exporter** — CSV export of business expenses (human-readable columns, dollar amounts).
+- **Expenses::FullExporter** — All-fields CSV export (20 columns, amounts in cents, ISO 8601 dates). Used for data portability / backup.
+- **Expenses::FullImporter** — Imports a FullExporter CSV. Creates synthetic `ExpenseUpload` with `card_type: "import"`, `status: "evaluated"`. Rejects if filename already exists (upload-level dedup). No transaction-level dedup.
+- **Expenses::TxfExporter** — Generates TXF v042 file for TurboTax Desktop import. Groups by TXF ref number, outputs TS (summary) + TD (detail) records. Meals auto-halved (50% deductible). Amounts are negative (expense convention).
+- **Expenses::ScheduleCExporter** — Schedule C summary CSV grouped by line number. Used for TurboTax Online manual entry reference. Also provides `summary_rows` for the TurboTax hub page preview table.
 
 ## Channel
 
@@ -75,7 +79,7 @@ end
 
 ## JS Modules (importmap)
 
-- `expense_components` — registers `fileDrop` (drag-and-drop file upload) and `evaluationProgress` (ActionCable real-time progress tracker) Alpine.data components. `paymentMethodPicker` remains inline in `expense_uploads/new.html.erb` due to ERB interpolation of DB records.
+- `expense_components` — registers `fileDrop` (drag-and-drop file upload) and `evaluationProgress` (ActionCable real-time progress tracker) Alpine.data components. Uses dual registration (both `alpine:init` event + direct call if `window.Alpine` exists) to handle race condition between Alpine CDN `defer` and importmap module loading. `paymentMethodPicker` remains inline in `expense_uploads/new.html.erb` due to ERB interpolation of DB records.
 
 ## Routes
 
@@ -83,13 +87,18 @@ Simplified paths (whole app is expenses):
 - `/` — Expense uploads index (root)
 - `/uploads` — Uploads CRUD + process + evaluate
 - `/uploads/new` — Upload with drag-and-drop + payment method picker
-- `/uploads/:slug` — Upload detail with inline review for needs_review transactions
+- `/uploads/:slug` — Upload detail with inline review, skipped credits viewer
 - `/transactions` — Filterable transaction list with status/category/account/card/month filters
-- `/transactions/:slug` — Transaction detail with manual override form + re-evaluate button
+- `/transactions/:slug` — Transaction detail with manual override form + re-evaluate + JSON debug
 - `/transactions/:slug/re_evaluate` — POST: reset and re-run AI classification on a single transaction
 - `/transactions/summary` — Expense summary by category/card/account/month
-- `/transactions/tax_report` — Annual tax report with deduction breakdown
+- `/transactions/tax_report` — Annual tax report with year tabs (2025/2026), deduction breakdown
 - `/transactions/export` — CSV export of business expenses
+- `/transactions/export_full` — Full data CSV export (all fields, all statuses) with year filter
+- `/transactions/import_data` — POST: import from full export CSV
+- `/transactions/turbotax` — TurboTax hub page with Schedule C preview, Desktop/Online instructions
+- `/transactions/turbotax_txf` — TXF file download for TurboTax Desktop
+- `/transactions/turbotax_csv` — Schedule C summary CSV download
 - `/guide` — Expense classification guide (preview + editor + generate from feedback)
 - `/payment_methods` — Payment methods CRUD (admin)
 - `/admin/theme`, `/admin/navbar`, `/error_logs` — From studio engine (navbar route added locally)
@@ -106,13 +115,15 @@ Simplified paths (whole app is expenses):
 - **Batch exclude**: On upload show page, modal receives `vendor_slugs` local (vendor→slugs lookup via `data-` attribute). Shows "Update X similar transactions" checkbox when other non-excluded transactions share the same vendor. Batch-submits to each matching transaction.
 - **Radio toggle**: Include/Exclude toggle on each transaction row (`_exclude_toggle.html.erb`). Visual state synced via `exclude-toggled` custom event.
 - **Google search**: Each transaction row in upload show has a search icon linking to Google search of the raw description (opens in new tab).
+- **Evaluation progress on refresh**: Upload show page computes progress from DB (count of non-unreviewed transactions / total), passes to Alpine as initial state. ActionCable updates override with live batch-level progress once connected.
+- **Import modal**: Uploads index has Alpine modal for importing full export CSVs, posting to `/transactions/import_data`.
 
 ## Error Handling
 
 Same pattern as McRitchie Studio — see top-level `CLAUDE.md`.
 
 - ExpenseUploadsController: create, destroy, process_file, evaluate all wrapped with `target: @upload`
-- ExpenseTransactionsController: update, answer_review, toggle_exclude, re_evaluate wrapped with `target: @transaction`
+- ExpenseTransactionsController: update, answer_review, toggle_exclude, re_evaluate wrapped with `target: @transaction`; import_data wrapped with `target: nil`
 - ExpenseGuidesController: update, generate_from_feedback wrapped with `target: @guide`
 - PaymentMethodsController: create, update, destroy wrapped with `target: @payment_method`
 
@@ -129,6 +140,9 @@ Same pattern as McRitchie Studio — see top-level `CLAUDE.md`.
 ## Known Issues
 
 - **`require "net/http"` needed**: Both `app/services/expenses/ai_evaluator.rb` and `app/controllers/expense_guides_controller.rb` must have `require "net/http"` at the top. The evaluate action runs in a Thread where Ruby's autoloader doesn't have `Net::HTTP` in scope.
+- **Alpine + importmap race condition**: Alpine loads via CDN with `defer`, importmap modules load async. `expense_components.js` handles this with dual registration (event listener + direct call). If new Alpine.data components are added in importmap modules, follow the same pattern.
+- **`duplicates_skipped` DB column**: Column exists in `expense_uploads` table but is unused. Duplicate checking was removed. Can be dropped in a future migration.
+- **`index_expense_transactions_on_duplicate_detection` index**: Vestigial index from duplicate detection. Can be dropped in a future migration.
 
 ## Testing
 

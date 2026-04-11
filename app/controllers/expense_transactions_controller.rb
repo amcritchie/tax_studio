@@ -120,6 +120,62 @@ class ExpenseTransactionsController < ApplicationController
     send_data csv, filename: "business_expenses_#{Date.current}.csv", type: "text/csv"
   end
 
+  def export_full
+    year = (params[:year] || 2025).to_i
+    date_range = Date.new(year, 1, 1)..Date.new(year, 12, 31)
+    transactions = ExpenseTransaction.where(transaction_date: date_range).recent
+    csv = Expenses::FullExporter.new(transactions).to_csv
+    send_data csv, filename: "tax_studio_full_export_#{year}.csv", type: "text/csv"
+  end
+
+  def import_data
+    unless params[:file].present?
+      return redirect_to expense_uploads_path, alert: "Please select a CSV file to import."
+    end
+
+    rescue_and_log(target: nil) do
+      result = Expenses::FullImporter.new(params[:file], params[:file].original_filename, current_user).import
+
+      if result.errors.any? && result.imported == 0
+        redirect_to expense_uploads_path, alert: result.errors.first
+      else
+        msg = "Imported #{result.imported} transactions."
+        msg += " Errors: #{result.errors.size}" if result.errors.any?
+        redirect_to expense_uploads_path, notice: msg
+      end
+    end
+  rescue StandardError => e
+    redirect_to expense_uploads_path, alert: "Import failed: #{e.message}"
+  end
+
+  def turbotax
+    @year = (params[:year] || 2025).to_i
+    date_range = Date.new(@year, 1, 1)..Date.new(@year, 12, 31)
+
+    @business = ExpenseTransaction.business_expenses.where(transaction_date: date_range)
+    @all_transactions = ExpenseTransaction.where(transaction_date: date_range)
+    @needs_review = @all_transactions.where(status: "needs_review")
+    @unreviewed = @all_transactions.where(status: "unreviewed")
+
+    @schedule_c = Expenses::ScheduleCExporter.new(@business)
+  end
+
+  def turbotax_txf
+    year = (params[:year] || 2025).to_i
+    date_range = Date.new(year, 1, 1)..Date.new(year, 12, 31)
+    transactions = ExpenseTransaction.business_expenses.where(transaction_date: date_range)
+    txf = Expenses::TxfExporter.new(transactions, year: year).to_txf
+    send_data txf, filename: "schedule_c_#{year}.txf", type: "application/octet-stream"
+  end
+
+  def turbotax_csv
+    year = (params[:year] || 2025).to_i
+    date_range = Date.new(year, 1, 1)..Date.new(year, 12, 31)
+    transactions = ExpenseTransaction.business_expenses.where(transaction_date: date_range)
+    csv = Expenses::ScheduleCExporter.new(transactions).to_csv
+    send_data csv, filename: "schedule_c_summary_#{year}.csv", type: "text/csv"
+  end
+
   def summary
     @business = ExpenseTransaction.business_expenses
     @needs_review = ExpenseTransaction.needs_review

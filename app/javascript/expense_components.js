@@ -38,18 +38,19 @@ function registerFileDrop() {
 
 // Evaluation progress — real-time ActionCable progress tracker
 function registerEvaluationProgress() {
-  Alpine.data('evaluationProgress', (uploadSlug) => ({
+  Alpine.data('evaluationProgress', (uploadSlug, initial = {}) => ({
     batch: 0,
     totalBatches: 0,
-    processed: 0,
-    total: 0,
-    percent: 0,
+    processed: initial.processed || 0,
+    total: initial.total || 0,
+    percent: (initial.total > 0) ? (initial.processed / initial.total) * 100 : 0,
     error: null,
     subscription: null,
 
     get statusText() {
-      if (this.totalBatches === 0) return 'Connecting...'
-      return `Batch ${this.batch} of ${this.totalBatches} — ${this.processed} / ${this.total} transactions`
+      if (this.total === 0) return 'Starting...'
+      if (this.totalBatches > 0) return `Batch ${this.batch} of ${this.totalBatches} — ${this.processed} / ${this.total} transactions`
+      return `${this.processed} / ${this.total} transactions evaluated`
     },
 
     get percentText() {
@@ -97,11 +98,13 @@ function registerEvaluationProgress() {
   }))
 }
 
-// Register components — handle both fresh page load and Turbo Drive navigation
+// Register components — must run before Alpine.start()
 function registerExpenseComponents() {
   registerFileDrop();
   registerEvaluationProgress();
 }
 
+// Both alpine:init and importmap modules load async — handle any ordering
+document.addEventListener('alpine:init', registerExpenseComponents);
+// If alpine:init already fired, Alpine global exists — register directly
 if (window.Alpine) { registerExpenseComponents(); }
-else { document.addEventListener('alpine:init', registerExpenseComponents); }

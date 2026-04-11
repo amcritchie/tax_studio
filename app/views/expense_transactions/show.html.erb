@@ -173,6 +173,12 @@
       </div>
     <% end %>
   </div>
+
+  <%# JSON Debug %>
+  <div class="json-debug mt-6">
+    <h3 class="label-upper mb-2">Raw Record</h3>
+    <pre class="text-xs text-secondary overflow-x-auto"><%= JSON.pretty_generate(@transaction.attributes) %></pre>
+  </div>
 </div>
 
 <%= render "expense_transactions/exclude_modal" %>

@@ -54,19 +54,18 @@ class ExpenseUploadsController < ApplicationController
         status: "processed",
         transaction_count: result.transactions.size,
         unique_transactions: result.transactions.size,
-        duplicates_skipped: result.duplicates_skipped,
         credits_skipped: result.credits_skipped,
         first_transaction_at: date_range&.first,
         last_transaction_at: date_range&.last,
         processing_summary: {
           errors: result.errors,
+          skipped: result.skipped_details,
           processed_at: Time.current.iso8601
         },
         processed_at: Time.current
       )
 
       notice = "Processed #{result.transactions.size} transactions"
-      notice += " (#{result.duplicates_skipped} duplicates skipped)" if result.duplicates_skipped > 0
       notice += " (#{result.credits_skipped} credits skipped)" if result.credits_skipped > 0
       redirect_to expense_upload_path(@upload.slug), notice: notice
     end

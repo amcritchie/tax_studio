@@ -1,6 +1,6 @@
 module Expenses
   class CsvParser
-    Result = Struct.new(:transactions, :card_type, :duplicates_skipped, :credits_skipped, :errors, keyword_init: true)
+    Result = Struct.new(:transactions, :card_type, :credits_skipped, :skipped_details, :errors, keyword_init: true)
 
     CARD_PATTERNS = {
       "citi" => {
@@ -8,7 +8,8 @@ module Expenses
         date_col: "Date",
         description_col: "Description",
         debit_col: "Debit",
-        credit_col: "Credit"
+        credit_col: "Credit",
+        date_format: "%m/%d/%Y"
       },
       "capital_one_spark" => {
         headers: /transaction date.*posted date.*card no.*description.*category.*debit.*credit/i,
@@ -60,8 +61,8 @@ module Expenses
       end
 
       transactions = []
-      duplicates_skipped = 0
       credits_skipped = 0
+      skipped_details = []
       errors = []
 
       ((header_row_num + 1)..spreadsheet.last_row).each do |row_num|
@@ -74,13 +75,10 @@ module Expenses
 
           if parsed[:amount_cents] <= 0
             credits_skipped += 1
+            skipped_details << { reason: "credit", date: parsed[:date]&.iso8601, description: parsed[:raw_description], amount_cents: parsed[:amount_cents] }
             next
           end
 
-          if duplicate?(parsed)
-            duplicates_skipped += 1
-            next
-          end
 
           txn = @upload.expense_transactions.create!(
             transaction_date: parsed[:date],
@@ -90,7 +88,7 @@ module Expenses
             payment_method: card_type
           )
           transactions << txn
-        rescue => e
+        rescue StandardError => e
           errors << "Row #{row_num}: #{e.message}"
         end
       end
@@ -98,8 +96,8 @@ module Expenses
       Result.new(
         transactions: transactions,
         card_type: card_type,
-        duplicates_skipped: duplicates_skipped,
         credits_skipped: credits_skipped,
+        skipped_details: skipped_details,
         errors: errors
       )
     ensure
@@ -221,15 +219,5 @@ module Expenses
       desc.to_s.strip.gsub(/\s+/, " ").downcase.gsub(/[^a-z0-9\s]/, "").strip
     end
 
-    def duplicate?(parsed)
-      ExpenseTransaction.where(
-        payment_method: parsed[:amount_cents] > 0 ? @upload.card_type : nil,
-        amount_cents: parsed[:amount_cents],
-        transaction_date: (parsed[:date] - 7.days)..(parsed[:date] + 7.days)
-      ).where(
-        "LOWER(TRIM(normalized_description)) = ?",
-        parsed[:normalized_description]
-      ).exists?
-    end
   end
 end

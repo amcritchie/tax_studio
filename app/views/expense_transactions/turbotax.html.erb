@@ -1,0 +1,136 @@
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-extrabold text-heading">TurboTax Export</h1>
+    <p class="text-secondary text-sm mt-1">Schedule C data for <%= @year %> tax filing</p>
+  </div>
+  <div class="flex items-center gap-3">
+    <%= link_to "Tax Report", tax_report_expense_transactions_path(year: @year), class: "btn btn-outline btn-sm" %>
+    <% [2025, 2026].each do |y| %>
+      <% if y == @year %>
+        <span class="btn btn-primary btn-sm cursor-default"><%= y %></span>
+      <% else %>
+        <%= link_to y, turbotax_expense_transactions_path(year: y), class: "btn btn-outline btn-sm" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Warnings %>
+<% if @needs_review.count > 0 || @unreviewed.count > 0 %>
+  <div class="p-4 rounded-lg bg-orange-500/10 border border-orange-500/30 mb-6">
+    <p class="font-bold text-orange-400 text-sm mb-1">Review Before Exporting</p>
+    <ul class="text-orange-300 text-sm space-y-1">
+      <% if @unreviewed.count > 0 %>
+        <li><%= @unreviewed.count %> transactions have not been evaluated by AI</li>
+      <% end %>
+      <% if @needs_review.count > 0 %>
+        <li><%= link_to "#{@needs_review.count} transactions need your review", expense_transactions_path(status: "needs_review"), class: "underline hover:text-orange-200" %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%# Downloads %>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+  <div class="card p-5">
+    <h3 class="label-upper mb-2">TXF File (Desktop)</h3>
+    <p class="text-secondary text-sm mb-3">Import directly into TurboTax Desktop via File &rarr; Import &rarr; From TXF.</p>
+    <%= link_to turbotax_txf_expense_transactions_path(year: @year), class: "btn btn-primary btn-sm" do %>
+      Download .txf
+    <% end %>
+  </div>
+  <div class="card p-5">
+    <h3 class="label-upper mb-2">Schedule C Summary (CSV)</h3>
+    <p class="text-secondary text-sm mb-3">Category totals mapped to Schedule C lines for manual entry reference.</p>
+    <%= link_to turbotax_csv_expense_transactions_path(year: @year), class: "btn btn-outline btn-sm" do %>
+      Download CSV
+    <% end %>
+  </div>
+</div>
+
+<%# Schedule C Preview Table %>
+<div class="card p-5 mb-8">
+  <h3 class="label-upper mb-4">Schedule C Preview</h3>
+  <% rows = @schedule_c.summary_rows %>
+  <% if rows.any? %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b-2 border-subtle">
+            <th class="text-left py-2 text-muted font-medium">Line</th>
+            <th class="text-left py-2 text-muted font-medium">Description</th>
+            <th class="text-left py-2 text-muted font-medium">Categories</th>
+            <th class="text-right py-2 text-muted font-medium">Txns</th>
+            <th class="text-right py-2 text-muted font-medium">Amount</th>
+            <th class="text-left py-2 pl-4 text-muted font-medium">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr class="border-b border-subtle">
+              <td class="py-2 text-heading font-mono"><%= row[:line] %></td>
+              <td class="py-2 text-heading"><%= row[:name] %></td>
+              <td class="py-2 text-secondary text-xs"><%= row[:categories].join(", ") %></td>
+              <td class="py-2 text-secondary text-right"><%= row[:count] %></td>
+              <td class="py-2 text-heading font-mono font-bold text-right">$<%= '%.2f' % (row[:amount_cents] / 100.0) %></td>
+              <td class="py-2 pl-4 text-muted text-xs"><%= row[:notes] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-subtle">
+            <td class="py-3" colspan="3"><span class="text-heading font-bold">Total Deductions</span></td>
+            <td class="py-3 text-secondary text-right font-bold"><%= @schedule_c.total_count %></td>
+            <td class="py-3 text-heading font-mono font-bold text-right">$<%= '%.2f' % (@schedule_c.total_cents / 100.0) %></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-muted text-sm">No business expenses found for <%= @year %>.</p>
+  <% end %>
+</div>
+
+<%# Filing Instructions %>
+<div class="card p-5" x-data="{ tab: 'desktop' }">
+  <h3 class="label-upper mb-4">Filing Instructions</h3>
+  <div class="flex gap-2 mb-4">
+    <button @click="tab = 'desktop'" :class="tab === 'desktop' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'">TurboTax Desktop</button>
+    <button @click="tab = 'online'" :class="tab === 'online' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'">TurboTax Online</button>
+  </div>
+
+  <div x-show="tab === 'desktop'" class="prose-themed">
+    <h3>Import via TXF File</h3>
+    <p>TurboTax Desktop (Windows/Mac installed version) supports importing TXF files for Schedule C business expenses.</p>
+    <ol>
+      <li>Download the <strong>.txf file</strong> above</li>
+      <li>Open TurboTax Desktop and navigate to your return</li>
+      <li>Go to <strong>File &rarr; Import &rarr; From TXF File</strong></li>
+      <li>Select the downloaded <code>schedule_c_<%= @year %>.txf</code> file</li>
+      <li>TurboTax will show a preview of the import &mdash; review the line items</li>
+      <li>Confirm the import &mdash; expenses will be added to your Schedule C</li>
+    </ol>
+    <p><strong>Note:</strong> Meals are automatically reduced to 50% (the deductible portion) in the TXF file. All other expenses are at full value.</p>
+  </div>
+
+  <div x-show="tab === 'online'" x-cloak class="prose-themed">
+    <h3>Manual Entry with Summary CSV</h3>
+    <p>TurboTax Online does <strong>not</strong> support TXF file import. You'll need to enter Schedule C expenses manually using the Summary CSV as a reference.</p>
+    <ol>
+      <li>Download the <strong>Summary CSV</strong> above</li>
+      <li>In TurboTax Online, navigate to <strong>Federal &rarr; Income &amp; Expenses &rarr; Self-Employment</strong></li>
+      <li>Select your business (or add one)</li>
+      <li>Go through the <strong>Business Expenses</strong> section</li>
+      <li>For each Schedule C line in the CSV, enter the total amount:
+        <ul>
+          <% rows.each do |row| %>
+            <li><strong>Line <%= row[:line] %></strong> &mdash; <%= row[:name] %>: $<%= '%.2f' % (row[:amount_cents] / 100.0) %></li>
+          <% end %>
+        </ul>
+      </li>
+      <li>TurboTax will ask category-specific questions &mdash; use the CSV notes column for context</li>
+    </ol>
+    <p><strong>Note:</strong> Meals are shown at 50% (the deductible portion). TurboTax may ask for the full amount and calculate the 50% itself &mdash; if so, double the meals amount shown here.</p>
+  </div>
+</div>

@@ -1,9 +1,31 @@
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-6" x-data="{ showImport: false }">
   <h1 class="text-2xl font-extrabold text-heading">Expense Uploads</h1>
   <div class="flex items-center gap-3">
     <%= link_to "All Transactions", expense_transactions_path, class: "btn btn-outline btn-sm" %>
     <%= link_to "Summary", summary_expense_transactions_path, class: "btn btn-outline btn-sm" %>
+    <button @click="showImport = true" class="btn btn-outline btn-sm">Import</button>
     <%= link_to "New Upload", new_expense_upload_path, class: "btn btn-primary btn-sm" %>
+  </div>
+
+  <%# Import Modal %>
+  <div x-show="showImport" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center"
+       @keydown.escape.window="showImport = false">
+    <div class="absolute inset-0 bg-black/60" @click="showImport = false"></div>
+    <div class="relative bg-surface rounded-xl border border-subtle p-6 w-full max-w-md shadow-xl" @click.stop>
+      <h2 class="text-lg font-bold text-heading mb-1">Import Data</h2>
+      <p class="text-secondary text-sm mb-4">Upload a Tax Studio full export CSV to import transactions.</p>
+      <%= form_tag import_data_expense_transactions_path, multipart: true, class: "space-y-4" do %>
+        <div>
+          <input type="file" name="file" accept=".csv"
+                 class="w-full text-sm text-secondary file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+        </div>
+        <div class="flex items-center justify-end gap-3">
+          <button type="button" @click="showImport = false" class="btn btn-outline btn-sm">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Import</button>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 

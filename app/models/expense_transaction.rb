@@ -36,6 +36,25 @@ class ExpenseTransaction < ApplicationRecord
     "personal" => "Personal"
   }.freeze
 
+  SCHEDULE_C_MAPPING = {
+    "marketing_advertising"  => { line: "8",   txf_ref: 304, name: "Advertising" },
+    "banking_fees"           => { line: "10",  txf_ref: 307, name: "Commissions and Fees" },
+    "insurance"              => { line: "15",  txf_ref: 310, name: "Insurance" },
+    "professional_services"  => { line: "17",  txf_ref: 298, name: "Legal and Professional Services" },
+    "office_supplies"        => { line: "18",  txf_ref: 313, name: "Office Expenses" },
+    "travel"                 => { line: "24a", txf_ref: 317, name: "Travel" },
+    "meals_entertainment"    => { line: "24b", txf_ref: 294, name: "Meals (50% deductible)" },
+    "internet_phone"         => { line: "25",  txf_ref: 318, name: "Utilities" },
+    "software_saas"          => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Software / SaaS" },
+    "cloud_hosting"          => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Cloud Hosting" },
+    "ai_services"            => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "AI Services" },
+    "home_office"            => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Home Office" },
+    "education_research"     => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Education / Research" },
+    "hardware_equipment"     => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Hardware / Equipment" },
+    "domain_registration"    => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Domain Registration" },
+    "other_business"         => { line: "27a", txf_ref: 302, name: "Other Expenses", sub: "Other" },
+  }.freeze
+
   STATUS_VALUES = %w[unreviewed classified needs_review reviewed].freeze
 
   scope :unreviewed, -> { where(status: "unreviewed") }
