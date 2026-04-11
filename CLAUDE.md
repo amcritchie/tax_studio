@@ -113,7 +113,7 @@ Simplified paths (whole app is expenses):
 
 ## Key Patterns
 
-- **Upload pipeline**: pending → processed (CsvParser) → evaluating (AiEvaluator with ActionCable) → evaluated
+- **Upload pipeline**: pending → processed (CsvParser) → evaluating (AiEvaluator with ActionCable) → evaluated. Upload card badges: Pending (yellow), Processed (blue), Evaluating (violet), Evaluated (emerald).
 - **Transaction status lifecycle**: `unreviewed` → AI sets `classified` or `needs_review` → user action (manual override, exclude, include, approve) sets `reviewed`. Re-evaluate resets to `unreviewed` then AI re-classifies. Badge colors: unreviewed=warning, classified+business=emerald, classified+personal=gray, needs_review=orange, reviewed=violet.
 - **Inline review**: needs_review transactions expand in the upload show view with AI question, answer input, category/account selects, approve/exclude buttons. Uses Alpine.js `inlineReview` component with JSON fetch to `/transactions/:slug.json`.
 - **Exclude modal**: Shared modal component (`_exclude_modal.html.erb`) triggered by `open-exclude-modal` custom event. Reason required (server-side validated). Quick-select dropdown with presets (Personal Dining, Personal Travel, Entertainment, Health, Groceries, Home Expense, Discretionary, Gifts, Vacation) for excludes. Posts to `/transactions/:slug/toggle_exclude.json`. Excluding auto-sets account to "personal" and status to "reviewed"; re-including also sets status to "reviewed".
@@ -142,9 +142,12 @@ Same pattern as McRitchie Studio — see top-level `CLAUDE.md`.
 ## Public Assets
 
 - `public/payment_methods/` — Card brand logos (robinhood.png/svg, capital-one.png/svg, capital-one-spark.png, chase.png/svg, citi.png/svg)
+- `public/logo.png`, `public/favicon.png` — App logos (copied from `icon.png`), referenced by `theme_logos` config
+- `public/studio-logo.svg` — SSO hub logo (copied from McRitchie Studio), used by `_sso_continue.html.erb`
 
 ## Known Issues
 
+- **Heroku Redis SSL**: `cable.yml` production config needs `ssl_params: verify_mode: VERIFY_NONE` because Heroku Redis uses `rediss://` with self-signed certificates.
 - **`require "net/http"` needed**: Both `app/services/expenses/ai_evaluator.rb` and `app/controllers/expense_guides_controller.rb` must have `require "net/http"` at the top. The evaluate action runs in a Thread where Ruby's autoloader doesn't have `Net::HTTP` in scope.
 - **Alpine + importmap race condition**: Alpine loads via CDN with `defer`, importmap modules load async. `expense_components.js` handles this with dual registration (event listener + direct call). If new Alpine.data components are added in importmap modules, follow the same pattern.
 - **`duplicates_skipped` DB column**: Column exists in `expense_uploads` table but is unused. Duplicate checking was removed. Can be dropped in a future migration.
