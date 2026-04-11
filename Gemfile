@@ -29,6 +29,9 @@ gem "omniauth-rails_csrf_protection", "~> 1.0"
 # Password hashing
 gem "bcrypt", "~> 3.1.7"
 
+# ActionCable adapter (production)
+gem "redis", "~> 5.0"
+
 gem "tzinfo-data", platforms: %i[ mswin mswin64 mingw x64_mingw jruby ]
 gem "bootsnap", require: false
 

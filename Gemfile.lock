@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/amcritchie/studio.git
-  revision: 46f4cb7a24fdd801a008691d414eb940339213a6
+  revision: bc5406c8d45b06529ed1a6175d1089c1dd33dc1d
   specs:
     studio (0.2.4)
       faker (>= 2.0)
@@ -282,6 +282,10 @@ GEM
       psych (>= 4.0.0)
       tsort
     redcarpet (3.6.1)
+    redis (5.4.1)
+      redis-client (>= 0.22.0)
+    redis-client (0.28.0)
+      connection_pool
     regexp_parser (2.12.0)
     reline (0.6.3)
       io-console (~> 0.5)
@@ -402,6 +406,7 @@ DEPENDENCIES
   puma (>= 5.0)
   rails (~> 7.2.3, >= 7.2.3.1)
   redcarpet
+  redis (~> 5.0)
   roo (~> 2.10)
   rubocop-rails-omakase
   selenium-webdriver
