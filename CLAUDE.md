@@ -9,10 +9,16 @@ Standalone expense tracking satellite app — CSV parsing, AI classification, ta
 
 ## Deployment
 
-- **Heroku**: Not yet deployed (deferred)
-- **Domain**: `tax.mcritchie.studio`
+- **Heroku app**: `tax-studio`
+- **URL**: https://tax.mcritchie.studio
+- **Heroku URL**: https://tax-studio-28e655143236.herokuapp.com/
+- **Database**: Heroku Postgres (essential-0)
+- **Redis**: heroku-redis:mini (for ActionCable)
+- **DNS**: Google Domains — `tax` CNAME → `curly-hawthorn-xc2ahbw7m3ylmzpyqlw991xx.herokudns.com`
+- **ACM**: Enabled (auto SSL via Let's Encrypt)
+- **Deploy**: `git push heroku main` (then `heroku run bin/rails db:migrate -a tax-studio` if new migrations)
 - **Repo**: https://github.com/amcritchie/tax_studio
-- **Env vars needed**: `RAILS_MASTER_KEY`, `RAILS_SERVE_STATIC_FILES`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, `REDIS_URL` (for ActionCable), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- **Env vars**: `RAILS_MASTER_KEY`, `RAILS_SERVE_STATIC_FILES`, `DATABASE_URL` (auto), `REDIS_URL` (auto), `SECRET_KEY_BASE` (shared for SSO), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ANTHROPIC_API_KEY` (for AI classification)
 
 ## Tech Stack
 
