@@ -70,7 +70,13 @@ class ExpenseTransactionsController < ApplicationController
         excluded_at: new_excluded ? Time.current : nil,
         status: "reviewed"
       }
-      attrs[:account] = "personal" if new_excluded
+      if new_excluded
+        attrs[:account] = "personal"
+      else
+        attrs[:account] = nil
+        attrs[:exclude_reason] = nil
+        attrs[:excluded_by] = nil
+      end
       @transaction.update!(attrs)
       respond_to do |format|
         format.html { redirect_back fallback_location: expense_transactions_path, notice: @transaction.excluded ? "Excluded." : "Included." }

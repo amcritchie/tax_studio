@@ -32,7 +32,7 @@
          return await res.json();
        },
        async submit() {
-         if (!this.reason.trim()) return;
+         if (!this.excluded && !this.reason.trim()) return;
          this.loading = true; this.errorMsg = '';
          try {
            const data = await this.toggleOne(this.slug);
@@ -72,7 +72,7 @@
     </template>
 
     <div class="mb-4">
-      <label class="label-upper mb-1 block" x-text="excluded ? 'Why include this?' : 'Why exclude this?'"></label>
+      <label class="label-upper mb-1 block" x-text="excluded ? 'Reason (optional)' : 'Why exclude this?'"></label>
       <template x-if="!excluded">
         <select @change="reason = $event.target.value; $event.target.value = ''" class="input-field text-sm w-full mb-2">
           <option value="">Quick select...</option>
@@ -101,7 +101,7 @@
 
     <div class="flex items-center justify-end gap-3">
       <button @click="close()" class="btn btn-outline btn-sm" :disabled="loading">Cancel</button>
-      <button @click="submit()" :disabled="loading || !reason.trim()" class="btn btn-sm" :class="excluded ? 'btn-primary' : 'btn-danger'">
+      <button @click="submit()" :disabled="loading || (!excluded && !reason.trim())" class="btn btn-sm" :class="excluded ? 'btn-primary' : 'btn-danger'">
         <span x-show="!loading" x-text="excluded ? 'Include' : 'Exclude'"></span>
         <span x-show="loading" class="flex items-center gap-1">
           <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
