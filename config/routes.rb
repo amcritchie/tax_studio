@@ -37,6 +37,10 @@ Rails.application.routes.draw do
   # Admin: Navbar review (engine controller)
   get "admin/navbar", to: "navbar#show", as: :admin_navbar
 
+  # Toast test page (dev only)
+  get "toast_test", to: "toast_test#index"
+  post "toast_test/flash", to: "toast_test#trigger_flash"
+
   get "up" => "rails/health#show", as: :rails_health_check
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
