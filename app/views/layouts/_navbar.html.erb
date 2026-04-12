@@ -54,9 +54,7 @@
         <nav class="hidden md:flex items-center gap-4">
           <%= link_to "Uploads", expense_uploads_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
           <%= link_to "Transactions", expense_transactions_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
-          <%= link_to "Summary", summary_expense_transactions_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
           <%= link_to "Tax Report", tax_report_expense_transactions_path(year: 2025), class: "text-secondary hover:text-primary text-sm font-medium transition" %>
-          <%= link_to "Guide", expense_guide_path, class: "text-secondary hover:text-primary text-sm font-medium transition" %>
           <%= link_to studio_url + (logged_in? ? "/sso_login" : ""), class: "inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-lg shadow-sm transition", target: "_blank" do %>
             McRitchie Studio
           <% end %>
@@ -79,9 +77,7 @@
   <div class="flex md:hidden items-center gap-3 px-4 py-1.5 overflow-x-auto border-t border-subtle bg-surface-alt">
     <%= link_to "Uploads", expense_uploads_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
     <%= link_to "Transactions", expense_transactions_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
-    <%= link_to "Summary", summary_expense_transactions_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
     <%= link_to "Tax Report", tax_report_expense_transactions_path(year: 2025), class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
-    <%= link_to "Guide", expense_guide_path, class: "text-secondary hover:text-primary text-xs font-medium transition whitespace-nowrap" %>
     <% unless show_user %>
       <%# Only show gear+moon here when logged out — when logged in, _user_nav already has them %>
       <span class="ml-auto flex items-center gap-3">
