@@ -43,8 +43,7 @@
                class="w-12 h-10 rounded-lg border border-strong cursor-pointer">
         <input type="text" name="payment_method[color]" x-model="color"
                @blur="let n = normalizeHex(color); if (n) color = n;"
-               class="text-sm font-mono text-secondary"
-               style="background: transparent; border: 1px solid var(--color-border-subtle); border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 5.5rem; outline: none;"
+               class="text-sm font-mono text-secondary color-hex-input"
                spellcheck="false">
       </div>
     </div>
@@ -55,8 +54,7 @@
                class="w-12 h-10 rounded-lg border border-strong cursor-pointer">
         <input type="text" name="payment_method[color_secondary]" x-model="colorSecondary"
                @blur="let n = normalizeHex(colorSecondary); if (n) colorSecondary = n;"
-               class="text-sm font-mono text-secondary"
-               style="background: transparent; border: 1px solid var(--color-border-subtle); border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 5.5rem; outline: none;"
+               class="text-sm font-mono text-secondary color-hex-input"
                spellcheck="false">
       </div>
     </div>

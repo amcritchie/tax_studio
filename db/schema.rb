@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_08_140010) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -94,7 +94,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_08_140010) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["expense_upload_id"], name: "index_expense_transactions_on_expense_upload_id"
-    t.index ["payment_method", "amount_cents", "transaction_date"], name: "index_expense_transactions_on_duplicate_detection"
     t.index ["slug"], name: "index_expense_transactions_on_slug", unique: true
   end
 
@@ -105,7 +104,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_08_140010) do
     t.string "status", default: "pending"
     t.integer "transaction_count", default: 0
     t.integer "unique_transactions", default: 0
-    t.integer "duplicates_skipped", default: 0
     t.integer "credits_skipped", default: 0
     t.jsonb "processing_summary"
     t.datetime "first_transaction_at"
