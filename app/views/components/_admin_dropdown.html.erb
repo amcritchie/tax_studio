@@ -11,6 +11,8 @@
     <a href="/guide" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">Guide</a>
     <a href="/payment_methods" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">Payment Methods</a>
     <div class="border-t border-subtle my-1"></div>
+    <% studio_url = Rails.env.production? ? "https://app.mcritchie.studio" : "http://localhost:3000" %>
+    <a href="<%= studio_url + (logged_in? ? "/sso_login" : "") %>" target="_blank" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">McRitchie Studio</a>
     <a href="/admin/theme" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">Theme</a>
     <a href="/error_logs" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">Error Logs</a>
     <a href="/toast_test" class="block px-4 py-2 text-sm text-body hover:text-heading hover:bg-surface-alt transition">Toast Test</a>
