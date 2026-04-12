@@ -57,7 +57,7 @@ end
 
 - **Primary**: `#10B981` Emerald green
 - **Logo**: "Tax **Studio**" (Studio in primary color)
-- **Navbar**: Extracted to `layouts/_navbar.html.erb` — sticky with scroll hysteresis (Alpine.js), logo via `Studio.logo_for("Navbar Logo")`, brand title auto-split ("Tax **Studio**"), full nav links (Uploads, Transactions, Summary, Tax Report, Guide), McRitchie Studio link for SSO hub, mobile sub-navbar, admin dropdown with Payment Methods, Navbar, Theme, Error Logs.
+- **Navbar**: Extracted to `layouts/_navbar.html.erb` — sticky with scroll hysteresis (Alpine.js), logo via `Studio.logo_for("Navbar Logo")`, brand title auto-split ("Tax **Studio**"), desktop nav links (Uploads, Transactions, Tax Report), mobile sub-navbar with same links + gear/moon (logged out only). Admin gear dropdown has: Summary, Guide, Payment Methods, McRitchie Studio (SSO), Theme, Error Logs, Toast Test.
 
 ## Models
 
