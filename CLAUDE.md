@@ -107,6 +107,7 @@ Simplified paths (whole app is expenses):
 - `/transactions/turbotax_csv` — Schedule C summary CSV download
 - `/guide` — Expense classification guide (preview + editor + generate from feedback)
 - `/payment_methods` — Payment methods CRUD (admin)
+- `/toast_test` — Toast notification test page (all variants, server-side flash test)
 - `/admin/theme`, `/admin/navbar`, `/error_logs` — From studio engine (navbar route added locally)
 - `/login`, `/signup`, `/logout`, `/sso_login` — Auth from studio engine
 - `/auth/google_oauth2/callback` — Google OAuth callback from studio engine
