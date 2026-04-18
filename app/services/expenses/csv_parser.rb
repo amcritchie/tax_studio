@@ -85,7 +85,7 @@ module Expenses
             raw_description: parsed[:raw_description],
             normalized_description: parsed[:normalized_description],
             amount_cents: parsed[:amount_cents],
-            payment_method: card_type
+            payment_method_id: PaymentMethod.find_by(parser_key: card_type)&.id
           )
           transactions << txn
         rescue StandardError => e

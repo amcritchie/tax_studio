@@ -9,7 +9,7 @@ class ExpenseTransactionsController < ApplicationController
     @transactions = @transactions.where(status: params[:status]) if params[:status].present?
     @transactions = @transactions.by_category(params[:category]) if params[:category].present?
     @transactions = @transactions.by_account(params[:account]) if params[:account].present?
-    @transactions = @transactions.by_card(params[:payment_method]) if params[:payment_method].present?
+    @transactions = @transactions.by_card(params[:payment_method_id]) if params[:payment_method_id].present?
     @transactions = @transactions.by_month(params[:month]) if params[:month].present?
     if params[:q].present?
       @transactions = @transactions.where("raw_description ILIKE ? OR vendor ILIKE ?", "%#{params[:q]}%", "%#{params[:q]}%")
@@ -188,7 +188,7 @@ class ExpenseTransactionsController < ApplicationController
     @total_business_cents = @business.sum(:amount_cents)
 
     @by_category = @business.group(:category).sum(:amount_cents).sort_by { |_, v| -v }
-    @by_card = @business.group(:payment_method).sum(:amount_cents).sort_by { |_, v| -v }
+    @by_card = @business.joins(:payment_method).group("payment_methods.name").sum(:amount_cents).sort_by { |_, v| -v }
     @by_account = @business.group(:account).sum(:amount_cents).sort_by { |_, v| -v }
     @by_month = @business.group("to_char(transaction_date, 'YYYY-MM')").sum(:amount_cents).sort_by { |k, _| k }
   end
@@ -209,7 +209,7 @@ class ExpenseTransactionsController < ApplicationController
     @by_deduction_type = @business.group(:deduction_type).sum(:amount_cents).sort_by { |_, v| -v }
     @by_account = @business.group(:account).sum(:amount_cents).sort_by { |_, v| -v }
     @by_month = @business.group("to_char(transaction_date, 'YYYY-MM')").sum(:amount_cents).sort_by { |k, _| k }
-    @by_card = @business.group(:payment_method).sum(:amount_cents).sort_by { |_, v| -v }
+    @by_card = @business.joins(:payment_method).group("payment_methods.name").sum(:amount_cents).sort_by { |_, v| -v }
   end
 
   private

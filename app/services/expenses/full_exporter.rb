@@ -22,7 +22,7 @@ module Expenses
             txn.raw_description,
             txn.normalized_description,
             txn.amount_cents,
-            txn.payment_method,
+            txn.payment_method&.parser_key,
             txn.status,
             txn.classification,
             txn.category,

@@ -44,7 +44,7 @@ module Expenses
             raw_description: row["raw_description"],
             normalized_description: normalized,
             amount_cents: amount_cents,
-            payment_method: row["payment_method"],
+            payment_method_id: PaymentMethod.find_by(parser_key: row["payment_method"])&.id,
             status: row["status"].presence || "classified",
             classification: row["classification"],
             category: row["category"],
@@ -68,8 +68,7 @@ module Expenses
       end
 
       upload.update!(
-        transaction_count: imported,
-        unique_transactions: imported
+        transaction_count: imported
       )
 
       Result.new(upload: upload, imported: imported, errors: errors)

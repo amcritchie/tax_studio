@@ -5,7 +5,7 @@
       <p class="text-secondary text-sm mt-1">
         <%= @transaction.transaction_date.strftime("%B %d, %Y") %> &middot;
         <%= @transaction.formatted_amount %> &middot;
-        <%= @transaction.payment_method&.titleize %>
+        <%= @transaction.payment_method&.name %>
       </p>
     </div>
     <div class="flex items-center gap-3">
@@ -75,7 +75,7 @@
       </div>
       <div>
         <dt class="text-muted">Card</dt>
-        <dd class="text-heading mt-1"><%= @transaction.payment_method&.titleize || "—" %></dd>
+        <dd class="text-heading mt-1"><%= @transaction.payment_method&.name || "—" %></dd>
       </div>
       <div>
         <dt class="text-muted">Upload</dt>

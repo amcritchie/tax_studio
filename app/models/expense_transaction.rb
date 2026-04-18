@@ -1,5 +1,6 @@
 class ExpenseTransaction < ApplicationRecord
   belongs_to :expense_upload
+  belongs_to :payment_method, optional: true
 
   before_validation :set_temp_slug, on: :create
   after_create :set_slug_from_id
@@ -68,7 +69,7 @@ class ExpenseTransaction < ApplicationRecord
   scope :recent, -> { order(transaction_date: :desc) }
   scope :by_category, ->(cat) { where(category: cat) }
   scope :by_account, ->(acc) { where(account: acc) }
-  scope :by_card, ->(card) { where(payment_method: card) }
+  scope :by_card, ->(pm_id) { where(payment_method_id: pm_id) if pm_id.present? }
   scope :by_month, ->(month) { where("to_char(transaction_date, 'YYYY-MM') = ?", month) }
 
   def amount_dollars

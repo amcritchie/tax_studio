@@ -53,7 +53,7 @@ class ExpenseUploadsController < ApplicationController
         card_type: result.card_type || @upload.card_type,
         status: "processed",
         transaction_count: result.transactions.size,
-        unique_transactions: result.transactions.size,
+
         credits_skipped: result.credits_skipped,
         first_transaction_at: date_range&.first,
         last_transaction_at: date_range&.last,

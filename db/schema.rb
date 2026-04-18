@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_08_140010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -75,7 +75,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
     t.text "raw_description", null: false
     t.text "normalized_description"
     t.integer "amount_cents", null: false
-    t.string "payment_method"
+    t.bigint "payment_method_id"
     t.string "status", default: "unreviewed"
     t.string "classification"
     t.string "category"
@@ -93,8 +93,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
     t.datetime "excluded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["classification"], name: "index_expense_transactions_on_classification"
+    t.index ["excluded"], name: "index_expense_transactions_on_excluded"
     t.index ["expense_upload_id"], name: "index_expense_transactions_on_expense_upload_id"
+    t.index ["payment_method_id"], name: "index_expense_transactions_on_payment_method_id"
     t.index ["slug"], name: "index_expense_transactions_on_slug", unique: true
+    t.index ["status", "classification", "excluded"], name: "index_expense_txns_on_status_class_excluded"
+    t.index ["status"], name: "index_expense_transactions_on_status"
+    t.index ["transaction_date"], name: "index_expense_transactions_on_transaction_date"
   end
 
   create_table "expense_uploads", force: :cascade do |t|
@@ -103,7 +109,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
     t.string "card_type"
     t.string "status", default: "pending"
     t.integer "transaction_count", default: 0
-    t.integer "unique_transactions", default: 0
     t.integer "credits_skipped", default: 0
     t.jsonb "processing_summary"
     t.datetime "first_transaction_at"
@@ -116,6 +121,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
     t.datetime "updated_at", null: false
     t.index ["payment_method_id"], name: "index_expense_uploads_on_payment_method_id"
     t.index ["slug"], name: "index_expense_uploads_on_slug", unique: true
+    t.index ["status"], name: "index_expense_uploads_on_status"
     t.index ["user_id"], name: "index_expense_uploads_on_user_id"
   end
 
@@ -170,6 +176,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_12_005907) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "expense_transactions", "expense_uploads"
+  add_foreign_key "expense_transactions", "payment_methods"
   add_foreign_key "expense_uploads", "payment_methods"
   add_foreign_key "expense_uploads", "users"
   add_foreign_key "payment_methods", "users"

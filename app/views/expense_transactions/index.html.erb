@@ -35,8 +35,8 @@
     </div>
     <div>
       <label class="label-upper mb-1 block">Card</label>
-      <%= select_tag :payment_method,
-        options_for_select([["All", ""]] + PaymentMethod.ordered.map { |pm| [pm.name, pm.parser_key] }, params[:payment_method]),
+      <%= select_tag :payment_method_id,
+        options_for_select([["All", ""]] + PaymentMethod.all.order(:name).map { |pm| [pm.name, pm.id] }, params[:payment_method_id]),
         class: "input-field text-sm", style: "width: 170px" %>
     </div>
     <div>
@@ -83,7 +83,7 @@
             <td class="px-4 py-3"><%= render "status_badge", txn: txn %></td>
             <td class="px-4 py-3 text-secondary text-xs"><%= txn.category_display %></td>
             <td class="px-4 py-3 text-secondary text-xs"><%= txn.account_display %></td>
-            <td class="px-4 py-3 text-muted text-xs"><%= txn.payment_method&.titleize %></td>
+            <td class="px-4 py-3 text-muted text-xs"><%= txn.payment_method&.name %></td>
             <td class="px-4 py-3">
               <%= render "expense_transactions/exclude_toggle", txn: txn %>
             </td>

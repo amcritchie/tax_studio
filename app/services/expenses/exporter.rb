@@ -20,7 +20,7 @@ module Expenses
             txn.category_display,
             txn.deduction_type_display,
             txn.account_display,
-            txn.payment_method&.titleize,
+            txn.payment_method&.name,
             txn.business_purpose
           ]
         end

@@ -59,7 +59,7 @@
       <div class="space-y-2">
         <% @by_card.each do |card, cents| %>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-heading"><%= PaymentMethod.find_by(parser_key: card)&.name || card&.titleize || "Unknown" %></span>
+            <span class="text-heading"><%= card || "Unknown" %></span>
             <span class="font-mono text-heading">$<%= '%.2f' % (cents / 100.0) %></span>
           </div>
         <% end %>

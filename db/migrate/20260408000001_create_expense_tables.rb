@@ -76,8 +76,6 @@ class CreateExpenseTables < ActiveRecord::Migration[7.2]
       t.string :card_type
       t.string :status, default: "pending"
       t.integer :transaction_count, default: 0
-      t.integer :unique_transactions, default: 0
-      t.integer :duplicates_skipped, default: 0
       t.integer :credits_skipped, default: 0
       t.jsonb :processing_summary
       t.datetime :first_transaction_at
@@ -90,6 +88,7 @@ class CreateExpenseTables < ActiveRecord::Migration[7.2]
       t.timestamps
     end
     add_index :expense_uploads, :slug, unique: true
+    add_index :expense_uploads, :status
 
     # Expense Transactions
     create_table :expense_transactions do |t|
@@ -99,7 +98,7 @@ class CreateExpenseTables < ActiveRecord::Migration[7.2]
       t.text :raw_description, null: false
       t.text :normalized_description
       t.integer :amount_cents, null: false
-      t.string :payment_method
+      t.references :payment_method, foreign_key: true
       t.string :status, default: "unreviewed"
 
       # AI classification fields
@@ -123,8 +122,11 @@ class CreateExpenseTables < ActiveRecord::Migration[7.2]
       t.timestamps
     end
     add_index :expense_transactions, :slug, unique: true
-    add_index :expense_transactions, [:payment_method, :amount_cents, :transaction_date],
-              name: "index_expense_transactions_on_duplicate_detection"
+    add_index :expense_transactions, :status
+    add_index :expense_transactions, :classification
+    add_index :expense_transactions, :excluded
+    add_index :expense_transactions, :transaction_date
+    add_index :expense_transactions, [:status, :classification, :excluded], name: "index_expense_txns_on_status_class_excluded"
 
     # Expense Guides
     create_table :expense_guides do |t|

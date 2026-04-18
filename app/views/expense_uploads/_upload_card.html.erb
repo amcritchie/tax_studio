@@ -22,7 +22,7 @@
     <% if upload.payment_method || upload.card_type.present? %>
       <p class="text-secondary"><%= upload.card_type_display %></p>
     <% end %>
-    <p class="text-secondary"><span class="font-bold text-heading"><%= upload.unique_transactions %> unique</span> / <%= upload.transaction_count %> transactions</p>
+    <p class="text-secondary"><span class="font-bold text-heading"><%= upload.transaction_count %></span> transactions</p>
     <% if upload.first_transaction_at && upload.last_transaction_at %>
       <p class="text-muted"><%= upload.first_transaction_at.strftime("%b %d, %Y") %> &ndash; <%= upload.last_transaction_at.strftime("%b %d, %Y") %></p>
     <% end %>
