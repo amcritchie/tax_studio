@@ -53,6 +53,8 @@ end
 
 **SSO Satellite Role:** Receives SSO from McRitchie Studio (hub) via shared session cookie. Login page shows "Continue as" button via engine partial. Same `SECRET_KEY_BASE` required across `*.mcritchie.studio`.
 
+**S3 / image caching:** `Studio::S3`, `Studio::ImageCache`, and the `ImageCache` model are available via the engine. No `s3_bucket_prefix` override → reads/writes the shared `mcritchie-studio-dev`/`-production` bucket (us-east-2). To get a dedicated bucket, set `config.s3_bucket_prefix = "tax-studio"` and create the matching buckets in AWS. AWS creds via shared `op://` refs in `/Users/alex/projects/.env`; Heroku will need `heroku config:set AWS_*` before any prod S3 feature ships. `image_caches` table created 2026-04-29; not yet used by any model.
+
 ## Branding & Theme
 
 - **Primary**: `#10B981` Emerald green
